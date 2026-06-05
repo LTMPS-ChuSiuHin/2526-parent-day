@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>智慧學校家長日系統 - iPad 專業版</title>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%);
+            --card-free-grad: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            --card-busy-grad: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            --text-dark: #1e293b;
+            --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            color: var(--text-dark);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        h1 { text-align: center; font-size: 2.4em; margin-bottom: 20px; color: #0f172a; font-weight: 800; }
+
+        .nav-tabs { display: flex; justify-content: center; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; }
+        .nav-btn {
+            background-color: #fff; border: 2px solid #cbd5e1; padding: 14px 28px; font-size: 1.1em;
+            font-weight: 700; border-radius: 40px; cursor: pointer; color: #475569; transition: all 0.2s ease; box-shadow: var(--shadow-sm);
+        }
+        .nav-btn:active { transform: scale(0.95); }
+        .nav-btn.active { background-color: #2563eb; color: #fff; border-color: #2563eb; box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3); }
+
+        .view-section { display: none; max-width: 1400px; margin: 0 auto; }
+        .view-section.active { display: block; animation: fadeIn 0.3s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 24px; }
+
+        .floor-tabs { display: flex; justify-content: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 2px dashed #cbd5e1; }
+        .floor-btn { background-color: #f8fafc; border: 2px solid #cbd5e1; padding: 12px 24px; border-radius: 16px; cursor: pointer; font-weight: 700; font-size: 1.1em; color: #475569; }
+        .floor-btn.active { background-color: #0f172a; color: #fff; border-color: #0f172a; }
+
+        /* 登記處卡片 */
+        .admin-card { background-color: #fff; border-radius: 20px; padding: 20px; box-shadow: var(--shadow-md); border: 1px solid #e2e8f0; display: flex; flex-direction: column; max-height: 550px;}
+        .a-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f1f5f9; padding-bottom: 12px; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;}
+        .a-class-name { font-size: 2em; font-weight: 800; color: #334155; }
+        
+        /* 復原按鈕 */
+        .btn-undo { 
+            background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; padding: 6px 14px; 
+            border-radius: 12px; font-size: 0.9em; font-weight: bold; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-undo:hover:not(:disabled) { background: #e2e8f0; color: #0f172a; }
+        .btn-undo:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .status-pill { padding: 6px 16px; border-radius: 30px; font-weight: 800; font-size: 1em; }
+        .pill-free { background-color: #d1fae5; color: #065f46; }
+        .pill-busy { background-color: #fee2e2; color: #991b1b; }
+
+        .student-list { 
+            flex-grow: 1; overflow-y: auto; padding-right: 10px; margin-top: 10px;
+            -webkit-overflow-scrolling: touch; 
+        }
+        .student-list::-webkit-scrollbar { width: 6px; }
+        .student-list::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
+
+        .student-row {
+            display: flex; justify-content: space-between; align-items: center; padding: 14px 16px;
+            margin-bottom: 10px; border-radius: 14px; cursor: pointer; font-weight: 700; font-size: 1.05em;
+            border: 2px solid transparent; user-select: none; transition: transform 0.1s;
+        }
+        .student-row:active { transform: scale(0.97); }
+        
+        .s-pending { background-color: #f8fafc; border-color: #e2e8f0; color: #64748b; }
+        .s-registered { background-color: #fffbeb; border-color: #fde68a; color: #d97706; }
+        .s-registered::after { content: '⏳ 已登記'; font-size: 0.85em; background: #fef3c7; padding: 4px 10px; border-radius: 12px; }
+        .s-interviewing { background-color: #fee2e2; border-color: #fca5a5; color: #991b1b; }
+        .s-interviewing::after { content: '🔴 面見中'; font-size: 0.85em; background: #fecaca; padding: 4px 10px; border-radius: 12px; }
+        .s-finished { background-color: #f0fdf4; border-color: #bbf7d0; color: #166534; opacity: 0.6; text-decoration: line-through; }
+        .s-finished::after { content: '✔️ 完成'; font-size: 0.85em; text-decoration: none; display: inline-block; }
+
+        /* 標示鎖定「下一位」的視覺特效 */
+        .is-next-inline { border: 2px solid #3b82f6 !important; background-color: #eff6ff; position: relative; }
+        .is-next-inline::before { content: '🔒 已鎖定下一位'; position: absolute; left: -10px; top: -12px; background: #3b82f6; color: white; font-size: 0.75em; padding: 4px 10px; border-radius: 10px; box-shadow: var(--shadow-sm); }
+
+        /* 等候室資訊面板 */
+        .waiting-info-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 25px; }
+        .info-card { background: #fff; border-radius: 24px; padding: 25px; box-shadow: var(--shadow-md); border-top: 8px solid #cbd5e1; text-align: center; }
+        .info-card.busy { border-top-color: #ef4444; }
+        .info-card.free { border-top-color: #10b981; }
+        .i-class { font-size: 2.5em; font-weight: 900; color: #1e293b; margin-bottom: 10px; }
+        .i-current { font-size: 1.3em; color: #475569; margin-bottom: 15px; min-height: 35px; }
+        .i-next-box { background: #eff6ff; border: 2px dashed #bfdbfe; border-radius: 16px; padding: 15px; margin-top: 15px; }
+        .i-next-title { font-size: 1em; color: #3b82f6; font-weight: bold; margin-bottom: 5px; }
+        .i-next-name { font-size: 1.8em; font-weight: 800; color: #1e3a8a; }
+
+        /* 課室老師設定與專屬面板 */
+        .teacher-setup { background: #fff; max-width: 500px; margin: 40px auto; padding: 40px; border-radius: 24px; box-shadow: var(--shadow-lg); text-align: center; }
+        .teacher-setup select { width: 100%; padding: 16px; margin-bottom: 25px; font-size: 1.3em; border-radius: 16px; border: 2px solid #cbd5e1; }
+        .btn-primary { background: #0f172a; color: white; width: 100%; padding: 18px; font-size: 1.3em; font-weight: bold; border-radius: 16px; border: none; }
+
+        .single-teacher-panel { display: none; max-width: 650px; margin: 0 auto; text-align: center; }
+        .single-teacher-panel.active { display: block; animation: fadeIn 0.4s ease; }
+        .teacher-card {
+            aspect-ratio: 1 / 1; border-radius: 36px; color: white; padding: 40px;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            cursor: pointer; box-shadow: var(--shadow-lg); position: relative; margin-bottom: 25px;
+        }
+        .teacher-card.free { background: var(--card-free-grad); }
+        .teacher-card.busy { background: var(--card-busy-grad); }
+        .t-class-name { font-size: 5em; font-weight: 900; margin: 0; text-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .t-timer { font-size: 4.5em; font-weight: bold; font-family: monospace; text-shadow: 0 2px 5px rgba(0,0,0,0.2); margin: 15px 0;}
+        .t-student-info { font-size: 2.2em; font-weight: 800; background: #fff; color: #dc2626; padding: 12px 35px; border-radius: 20px; margin-top: 15px; }
+        
+        .btn-back { background: transparent; border: 2px solid #94a3b8; color: #64748b; padding: 14px 28px; border-radius: 20px; font-weight: bold; font-size: 1.1em; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <h1>🏫 家長日預約及課室系統</h1>
+
+    <div class="nav-tabs">
+        <button id="btn-tab-admin" class="nav-btn active" onclick="switchView('admin')">📋 登記處操作</button>
+        <button id="btn-tab-info" class="nav-btn" onclick="switchView('info')">📺 等候室資訊面板</button>
+        <button id="btn-tab-teacher" class="nav-btn" onclick="switchView('teacher')">📱 課室老師面板</button>
+        <button id="btn-tab-master" class="nav-btn" onclick="switchView('master')">🖥️ 系統總覽</button>
+    </div>
+
+    <div id="view-admin" class="view-section active">
+        <div class="floor-tabs" id="floor-tabs-container"></div>
+        <div class="grid-container" id="admin-grid"></div>
+        <div style="text-align: center; margin-top: 40px;">
+            <button class="btn-back" style="border-color: #ef4444; color: #ef4444;" onclick="resetData()">⚠️ 重設系統與重新載入名單</button>
+        </div>
+    </div>
+
+    <div id="view-info" class="view-section">
+        <div class="floor-tabs" id="floor-tabs-container-info"></div>
+        <div class="waiting-info-grid" id="info-grid"></div>
+    </div>
+
+    <div id="view-teacher" class="view-section">
+        <div id="teacher-setup" class="teacher-setup">
+            <h2>進入課室操作面板</h2>
+            <select id="select-grade"><option value="1">一年級</option><option value="2">二年級</option><option value="3">三年級</option><option value="4">四年級</option><option value="5">五年級</option></select>
+            <select id="select-class"><option value="A">A 班</option><option value="B">B 班</option><option value="C">C 班</option><option value="D">D 班</option><option value="E">E 班</option></select>
+            <button class="btn-primary" onclick="enterTeacherPanel()">確認並進入</button>
+        </div>
+        <div id="teacher-panel-view" class="single-teacher-panel">
+            <div id="single-teacher-card" onclick="toggleTeacherStatus()"></div>
+            <button class="btn-back" onclick="exitTeacherPanel()">⬅️ 返回重新選擇課室</button>
+        </div>
+    </div>
+
+    <div id="view-master" class="view-section">
+        <div class="grid-container" id="master-grid" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));"></div>
+    </div>
+
+    <script>
+        // 1. 樓層與班別結構
+        const floorMap = {
+            '一樓 XSpace': ['1A', '1B', '1C', '1D', '1E', '2A'],
+            '二樓 InnoSpace': ['2B', '2C', '2D', '2E', '3A', '3B'],
+            '四樓 音樂室': ['3C', '3D', '3E', '4A', '4B', '4C'],
+            '五樓 音樂室': ['4D', '4E', '5A', '5B', '5C', '5D'],
+            '6E 課室': ['5E']
+        };
+        const classList = Object.values(floorMap).flat();
+        let currentFloor = '一樓 XSpace'; 
+        let myClass = null; 
+
+        // 模擬名單數據 (測試排序用，預約時間已打亂)
+        const sampleJSON = {};
+        classList.forEach(cls => {
+            let students = [];
+            for(let i=1; i<=18; i++) {
+                let hour = Math.floor(Math.random() * 6) + 9;
+                let min = Math.random() > 0.5 ? "00" : "30";
+                let timeStr = `${String(hour).padStart(2, '0')}:${min}`;
+                students.push({ classNo: String(i), name: `家長${i}`, time: timeStr });
+            }
+            sampleJSON[cls] = students;
+        });
+
+        // 2. 資料系統與深拷貝(供復原用)
+        function getSystemData() {
+            let data = localStorage.getItem('parentsDayData_JSON_v3');
+            if (!data) {
+                data = {};
+                classList.forEach(className => {
+                    const schedule = (sampleJSON[className] || []).map(s => ({ ...s, state: 'pending' }));
+                    data[className] = { 
+                        status: 'free', 
+                        startTime: null, 
+                        currentStudent: null, 
+                        lockedNextClassNo: null, // 新增：鎖定下一位學生的學號
+                        historySnapshot: null,   // 新增：儲存上一步狀態
+                        schedule: schedule 
+                    };
+                });
+                localStorage.setItem('parentsDayData_JSON_v3', JSON.stringify(data));
+            } else {
+                data = JSON.parse(data);
+            }
+            return data;
+        }
+
+        function saveSystemData(data) { localStorage.setItem('parentsDayData_JSON_v3', JSON.stringify(data)); }
+
+        // 深拷貝當前班級狀態作備份
+        function saveSnapshot(room) {
+            const snap = JSON.parse(JSON.stringify(room));
+            delete snap.historySnapshot; // 防止無限嵌套
+            room.historySnapshot = snap;
+        }
+
+        // 執行復原動作
+        function undoLastAction(className) {
+            let data = getSystemData();
+            if (data[className].historySnapshot) {
+                data[className] = data[className].historySnapshot;
+                data[className].historySnapshot = null; // 復原後清空，只容許復原一步
+                saveSystemData(data);
+                renderAll();
+            }
+        }
+
+        // --- 核心：鎖定「下一位」邏輯 ---
+        function updateLockedNextStudent(room) {
+            const registered = room.schedule.filter(s => s.state === 'registered');
+            
+            // 如果沒人登記，解鎖
+            if (registered.length === 0) {
+                room.lockedNextClassNo = null;
+                return;
+            }
+
+            // 如果已經鎖定了某位家長，檢查他是否依然處於「已登記」狀態
+            // 如果是，代表他還沒見老師，所以不改變鎖定 (即使有人時間更早)
+            if (room.lockedNextClassNo) {
+                const stillValid = registered.find(s => s.classNo === room.lockedNextClassNo);
+                if (stillValid) return; // 繼續鎖定這位
+            }
+
+            // 只有在未鎖定，或原鎖定家長已進入面見時，才重新尋找預約時間最早的家長
+            registered.sort((a, b) => a.time.localeCompare(b.time));
+            room.lockedNextClassNo = registered[0].classNo;
+        }
+
+        function getLockedNextStudentObj(room) {
+            if (!room.lockedNextClassNo) return null;
+            return room.schedule.find(s => s.classNo === room.lockedNextClassNo) || null;
+        }
+
+        // 3. 狀態轉換邏輯
+        function advanceStudentState(className, classNo) {
+            let data = getSystemData();
+            let room = data[className];
+            
+            saveSnapshot(room); // 操作前先備份狀態供復原用
+
+            let student = room.schedule.find(s => s.classNo === classNo);
+
+            if (student.state === 'pending') {
+                student.state = 'registered';
+            } else if (student.state === 'registered') {
+                let current = room.schedule.find(s => s.state === 'interviewing');
+                if (current) current.state = 'finished';
+
+                student.state = 'interviewing';
+                room.status = 'busy';
+                room.startTime = Date.now();
+                room.currentStudent = { name: student.name, classNo: student.classNo };
+            } else if (student.state === 'interviewing') {
+                student.state = 'finished';
+                room.status = 'free';
+                room.startTime = null;
+                room.currentStudent = null;
+            }
+
+            updateLockedNextStudent(room); // 更新鎖定機制
+            saveSystemData(data);
+            renderAll();
+        }
+
+        function toggleTeacherStatus() {
+            if (!myClass) return;
+            let data = getSystemData();
+            let room = data[myClass];
+
+            saveSnapshot(room); // 老師按鈕也支援復原備份
+
+            if (room.status === 'free') {
+                // 叫號：自動呼叫被鎖定的那位家長
+                let nextStudent = getLockedNextStudentObj(room);
+                if (nextStudent) {
+                    nextStudent.state = 'interviewing';
+                    room.currentStudent = { name: nextStudent.name, classNo: nextStudent.classNo };
+                    room.status = 'busy';
+                    room.startTime = Date.now();
+                } else {
+                    room.status = 'busy';
+                    room.startTime = Date.now();
+                    room.currentStudent = { name: "未登記家長", classNo: "-" };
+                }
+            } else {
+                room.status = 'free';
+                room.startTime = null;
+                if (room.currentStudent) {
+                    let current = room.schedule.find(s => s.state === 'interviewing');
+                    if (current) current.state = 'finished';
+                }
+                room.currentStudent = null;
+            }
+
+            updateLockedNextStudent(room); // 面見開始或結束後，重新計算下一位
+            saveSystemData(data);
+            renderAll();
+        }
+
+        // 4. 介面渲染
+        function switchView(viewName) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(`view-${viewName}`).classList.add('active');
+            document.getElementById(`btn-tab-${viewName}`).classList.add('active');
+            renderAll();
+        }
+
+        function switchFloor(floorName) { currentFloor = floorName; renderAll(); }
+
+        function enterTeacherPanel() {
+            myClass = `${document.getElementById('select-grade').value}${document.getElementById('select-class').value}`;
+            document.getElementById('teacher-setup').style.display = 'none';
+            document.getElementById('teacher-panel-view').classList.add('active');
+            renderSingleTeacherPanel();
+        }
+
+        function exitTeacherPanel() {
+            myClass = null;
+            document.getElementById('teacher-setup').style.display = 'block';
+            document.getElementById('teacher-panel-view').classList.remove('active');
+        }
+
+        function renderAll() {
+            renderFloorTabs('floor-tabs-container');
+            renderFloorTabs('floor-tabs-container-info');
+            renderAdminGrid();
+            renderInfoGrid();
+            renderMasterGrid();
+            if (myClass) renderSingleTeacherPanel();
+            updateTimersUI(); 
+        }
+
+        function renderFloorTabs(containerId) {
+            const container = document.getElementById(containerId);
+            if(!container) return;
+            container.innerHTML = '';
+            Object.keys(floorMap).forEach(floor => {
+                const btn = document.createElement('button');
+                btn.className = `floor-btn ${floor === currentFloor ? 'active' : ''}`;
+                btn.innerText = floor;
+                btn.onclick = () => switchFloor(floor);
+                container.appendChild(btn);
+            });
+        }
+
+        // 登記處渲染 (含復原按鈕)
+        function renderAdminGrid() {
+            const data = getSystemData();
+            const grid = document.getElementById('admin-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
+
+            floorMap[currentFloor].forEach((className) => {
+                const room = data[className];
+                const isFree = room.status === 'free';
+                const lockedNext = getLockedNextStudentObj(room);
+                const hasHistory = room.historySnapshot !== null;
+                
+                const card = document.createElement('div');
+                card.className = 'admin-card';
+
+                let sortedSchedule = [...room.schedule].sort((a, b) => a.time.localeCompare(b.time));
+
+                let scheduleHTML = `<div class="student-list">`;
+                sortedSchedule.forEach(stu => {
+                    let isNextClass = (lockedNext && lockedNext.classNo === stu.classNo) ? 'is-next-inline' : '';
+                    scheduleHTML += `
+                        <div class="student-row s-${stu.state} ${isNextClass}" onclick="advanceStudentState('${className}', '${stu.classNo}')">
+                            <span>🕒 ${stu.time} | ${stu.classNo}號 ${stu.name}</span>
+                        </div>
+                    `;
+                });
+                scheduleHTML += `</div>`;
+
+                card.innerHTML = `
+                    <div class="a-header">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div class="a-class-name">${className}</div>
+                            <div class="status-pill ${isFree ? 'pill-free' : 'pill-busy'}">
+                                ${isFree ? '🟢 空閒中' : '🔴 面見中'}
+                            </div>
+                        </div>
+                        <button class="btn-undo" onclick="undoLastAction('${className}')" ${!hasHistory ? 'disabled' : ''}>
+                            ↩️ 復原上一步
+                        </button>
+                    </div>
+                    ${scheduleHTML}
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // 等候室大螢幕資訊
+        function renderInfoGrid() {
+            const data = getSystemData();
+            const grid = document.getElementById('info-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
+
+            floorMap[currentFloor].forEach((className) => {
+                const room = data[className];
+                const isFree = room.status === 'free';
+                const lockedNext = getLockedNextStudentObj(room);
+                const currentName = room.currentStudent ? `${room.currentStudent.classNo}號 ${room.currentStudent.name}` : '無';
+                const nextName = lockedNext ? `${lockedNext.time} - ${lockedNext.classNo}號 ${lockedNext.name}` : '目前無人等候';
+
+                const card = document.createElement('div');
+                card.className = `info-card ${isFree ? 'free' : 'busy'}`;
+                card.innerHTML = `
+                    <div class="i-class">${className} 班</div>
+                    <div class="i-current">
+                        ${isFree ? '🟢 目前空閒，準備叫號' : `🔴 面見中：<strong>${currentName}</strong>`}
+                    </div>
+                    <div class="i-next-box">
+                        <div class="i-next-title">🔜 下位面見家長</div>
+                        <div class="i-next-name">${nextName}</div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // 總覽
+        function renderMasterGrid() {
+            const data = getSystemData();
+            const grid = document.getElementById('master-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
+
+            classList.forEach((className) => {
+                const room = data[className];
+                const isFree = room.status === 'free';
+                const card = document.createElement('div');
+                card.className = 'admin-card';
+                card.style.borderTop = `6px solid ${isFree ? '#10b981' : '#ef4444'}`;
+                card.style.maxHeight = 'none';
+
+                card.innerHTML = `
+                    <div style="font-size:1.8em; font-weight:bold;">${className}</div>
+                    <div class="timer-display" data-class="${className}" style="font-size:2em; font-weight:bold; font-family:monospace; margin:10px 0; color: ${isFree ? '#333' : '#dc2626'}">00:00</div>
+                    <div style="font-size:1em; color:#475569; font-weight:bold;">
+                        ${isFree ? '🟢 空閒' : `🗣️ 面見中`}
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // 課室面板
+        function renderSingleTeacherPanel() {
+            if (!myClass) return;
+            const data = getSystemData();
+            const room = data[myClass];
+            const isFree = room.status === 'free';
+            const lockedNext = getLockedNextStudentObj(room);
+            const card = document.getElementById('single-teacher-card');
+            
+            let studentInfoHTML = '';
+            if (!isFree && room.currentStudent) {
+                studentInfoHTML = `<div class="t-student-info">現局面見：${room.currentStudent.classNo}號 ${room.currentStudent.name}</div>`;
+            }
+
+            let nextInfo = lockedNext ? `🔜 已鎖定下一位：${lockedNext.time} (${lockedNext.classNo}號 ${lockedNext.name})` : `目前無人登記等候`;
+
+            card.className = `teacher-card ${isFree ? 'free' : 'busy'}`;
+            card.innerHTML = `
+                <div style="font-size: 1.6em; font-weight: bold; background: rgba(0,0,0,0.15); padding: 10px 20px; border-radius: 15px; margin-bottom: 20px;">
+                    ${nextInfo}
+                </div>
+                <div class="t-class-name">${myClass}</div>
+                <div class="t-timer timer-display" data-class="${myClass}">00:00</div>
+                ${studentInfoHTML}
+                <div style="font-size: 1.6em; font-weight: 700; margin-top: 25px; background: rgba(255,255,255,0.25); padding: 10px 30px; border-radius: 50px;">
+                    ${isFree ? '🟢 空閒中 (點擊呼叫下位)' : '🔴 面見中 (點擊結束)'}
+                </div>
+            `;
+        }
+
+        function resetData() {
+            if (confirm('確定要清空所有資料並重新載入名單嗎？')) {
+                localStorage.removeItem('parentsDayData_JSON_v3');
+                getSystemData();
+                renderAll();
+            }
+        }
+
+        // 計時器
+        function updateTimersUI() {
+            const data = getSystemData();
+            document.querySelectorAll('.timer-display').forEach(timerEl => {
+                const className = timerEl.getAttribute('data-class');
+                const room = data[className];
+                if (room && room.status === 'busy' && room.startTime) {
+                    const elapsedSecs = Math.floor((Date.now() - room.startTime) / 1000);
+                    timerEl.innerText = `${String(Math.floor(elapsedSecs / 60)).padStart(2, '0')}:${String(elapsedSecs % 60).padStart(2, '0')}`;
+                } else {
+                    timerEl.innerText = "00:00";
+                }
+            });
+        }
+
+        setInterval(updateTimersUI, 1000);
+        window.addEventListener('storage', e => { if (e.key === 'parentsDayData_JSON_v3') renderAll(); });
+        renderAll();
+    </script>
+</body>
+</html>
