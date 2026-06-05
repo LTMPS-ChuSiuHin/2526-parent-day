@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>智慧學校家長日系統 - Firebase 雲端專業版</title>
+    <title>25-26 期終家長日面見提示系統</title>
     <style>
         :root {
             --bg-gradient: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%);
@@ -181,7 +181,6 @@
         .modal-btns { display: flex; justify-content: flex-end; gap: 10px; }
     </style>
 
-    <!-- 載入 Firebase SDK (Modular V9) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, setDoc, updateDoc, deleteDoc, collection, onSnapshot, addDoc, serverTimestamp, writeBatch, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -423,6 +422,12 @@
 
         // 安全重設
         window.resetDayStatus = async function() {
+            const pwd = prompt("請輸入管理員密碼以進行安全重設：");
+            if (pwd !== "ltmps") {
+                alert("密碼錯誤，拒絕重設。");
+                return;
+            }
+
             if (!confirm('⚠️ 警告：這會將全校的面見狀態及家長等候進度重置為「未到達/空閒」。\n（已輸入的名單不會被刪除）。確定執行？')) return;
             const batch = writeBatch(db);
             classList.forEach(className => {
@@ -578,10 +583,15 @@
             const grid = document.getElementById('master-grid');
             if (!grid) return; grid.innerHTML = '';
             classList.forEach((className) => {
-                const room = systemData[className] || { status: 'free' };
+                const room = systemData[className] || { status: 'free', schedule: [] };
+                
+                // 計算此班等候人數
+                const waitingCount = (room.schedule || []).filter(s => s.state === 'registered').length;
+                
                 const card = document.createElement('div'); card.className = 'admin-card';
                 card.style.borderTop = `6px solid ${room.status === 'busy' ? '#ef4444' : (room.status === 'break' ? '#f59e0b' : '#10b981')}`;
                 card.innerHTML = `<div style="font-size:1.8em; font-weight:bold;">${className}</div>
+                    <div style="font-size: 1.1em; color: #475569; margin-top: 5px;">等候人數: <strong style="color: #f59e0b; font-size: 1.3em;">${waitingCount}</strong></div>
                     <div class="timer-display" data-class="${className}" style="font-size:2em; font-weight:bold; font-family:monospace; margin:10px 0; color: #333">00:00</div>
                     <div style="font-size:1em; color:#475569; font-weight:bold;">${getStatusText(room.status)}</div>`;
                 grid.appendChild(card);
@@ -727,7 +737,7 @@
 </head>
 <body>
 
-    <h1>🏫 家長日預約系統 (Firebase 雲端專業版)</h1>
+    <h1>🏫 25-26 期終家長日面見提示系統</h1>
 
     <div class="nav-tabs">
         <button id="btn-tab-admin" class="nav-btn active" onclick="switchView('admin')">📋 登記處操作</button>
@@ -738,7 +748,6 @@
         <button id="btn-tab-setup" class="nav-btn" style="border-color:#10b981; color:#059669;" onclick="switchView('setup')">📝 班級名單與時間</button>
     </div>
 
-    <!-- 視圖一：大堂登記處 -->
     <div id="view-admin" class="view-section active">
         <div class="floor-tabs" id="floor-tabs-container"></div>
         <div class="grid-container" id="admin-grid"></div>
@@ -749,13 +758,11 @@
         </div>
     </div>
 
-    <!-- 視圖二：等候室資訊 -->
     <div id="view-info" class="view-section">
         <div class="floor-tabs" id="floor-tabs-container-info"></div>
         <div class="waiting-info-grid" id="info-grid"></div>
     </div>
 
-    <!-- 視圖三：課室老師面板 -->
     <div id="view-teacher" class="view-section">
         <div id="teacher-setup" class="teacher-setup">
             <h2>進入課室操作面板</h2>
@@ -778,12 +785,10 @@
         </div>
     </div>
 
-    <!-- 視圖四：系統總覽 -->
     <div id="view-master" class="view-section">
         <div class="grid-container" id="master-grid" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));"></div>
     </div>
     
-    <!-- 視圖五：查閱家長意見 -->
     <div id="view-feedback-list" class="view-section">
         <div class="setup-card" style="background: transparent; box-shadow: none; padding: 0;">
             <h2 style="margin-top:0; color: #0f172a;">📖 家長意見紀錄總覽</h2>
@@ -793,7 +798,6 @@
         </div>
     </div>
 
-    <!-- 視圖六：名單與時間編排 -->
     <div id="view-setup" class="view-section">
         <div class="setup-card">
             <h2 style="margin-top:0;">📝 班級名單與面見時間編輯器</h2>
@@ -811,7 +815,6 @@
         </div>
     </div>
 
-    <!-- 意見回饋輸入視窗 -->
     <div id="feedback-modal" class="modal-overlay">
         <div class="modal-content">
             <h3>📝 紀錄/編輯家長意見</h3>
