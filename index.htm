@@ -77,7 +77,7 @@
         .is-next-inline { border: 2px solid #3b82f6 !important; background-color: #eff6ff; position: relative; }
         .is-next-inline::before { content: '🔒 已鎖定下一位'; position: absolute; left: -10px; top: -12px; background: #3b82f6; color: white; font-size: 0.75em; padding: 4px 10px; border-radius: 10px; box-shadow: var(--shadow-sm); }
 
-        /* 等候室資訊面板 (強制 3 行，即 6 班分為 2 列顯示) */
+        /* 等候室資訊面板 (強制 3 行) */
         .waiting-info-grid { 
             display: grid; 
             grid-template-columns: repeat(3, 1fr); 
@@ -123,7 +123,7 @@
             aspect-ratio: 1 / 1; border-radius: 36px; color: white; padding: 30px;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             box-shadow: var(--shadow-lg); position: relative; margin-bottom: 20px; transition: all 0.3s;
-            cursor: default; /* 取消指標 */
+            cursor: default; 
         }
         .teacher-card.free { background: var(--card-free-grad); }
         .teacher-card.busy { background: var(--card-busy-grad); }
@@ -168,7 +168,6 @@
         .fb-student { font-size: 1.1em; font-weight: 700; color: #0f172a; margin-top: 5px;}
         .fb-content { font-size: 1.1em; color: #334155; background: #f8fafc; padding: 15px; border-radius: 12px; white-space: pre-wrap; line-height: 1.5;}
         
-        /* 查閱意見按鈕區 */
         .fb-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; }
         .btn-fb-edit { background: #e0f2fe; color: #0369a1; border: none; padding: 6px 16px; border-radius: 10px; font-weight: bold; cursor: pointer; }
         .btn-fb-delete { background: #fee2e2; color: #b11c1c; border: none; padding: 6px 16px; border-radius: 10px; font-weight: bold; cursor: pointer; }
@@ -182,6 +181,7 @@
         .modal-btns { display: flex; justify-content: flex-end; gap: 10px; }
     </style>
 
+    <!-- 載入 Firebase SDK (Modular V9) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, setDoc, updateDoc, deleteDoc, collection, onSnapshot, addDoc, serverTimestamp, writeBatch, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -202,7 +202,7 @@
         let feedbackData = []; 
         let currentFloor = '一樓 XSpace'; 
         let myClass = null; 
-        let editingFeedbackId = null; // 紀錄正在編輯的意見 ID
+        let editingFeedbackId = null; 
         
         const floorMap = {
             '一樓 XSpace': ['1A', '1B', '1C', '1D', '1E', '2A'],
@@ -259,7 +259,6 @@
         // Window 綁定功能 (UI 互動)
         // =======================
         window.switchView = function(viewName) {
-            // 查閱意見需要密碼
             if (viewName === 'feedback-list') {
                 const pwd = prompt("請輸入管理員密碼以查閱意見：");
                 if (pwd !== "ltmps") {
@@ -282,8 +281,15 @@
 
         window.advanceStudentState = function(className, classNo) {
             let room = systemData[className] || { status: 'free', schedule: [] };
-            saveSnapshot(room);
             let student = room.schedule.find(s => s.classNo === classNo);
+
+            // 防護鎖定：如果正嘗試安排入內，但老師在小休，則阻擋
+            if (student.state === 'registered' && room.status === 'break') {
+                alert("老師正在小休，暫時不能安排面見！\n請等待老師狀態改為「空閒中」。");
+                return;
+            }
+
+            saveSnapshot(room);
 
             if (student.state === 'pending') { student.state = 'registered'; } 
             else if (student.state === 'registered') {
@@ -296,6 +302,7 @@
             else if (student.state === 'interviewing') {
                 student.state = 'finished'; room.status = 'free'; room.startTime = null; room.currentStudent = null;
             }
+            
             updateLockedNextStudent(room);
             updateFirebase(className, room);
         }
@@ -370,7 +377,7 @@
 
         window.closeFeedbackModal = function() { 
             document.getElementById('feedback-modal').classList.remove('active'); 
-            editingFeedbackId = null; // 重置編輯狀態
+            editingFeedbackId = null; 
         }
 
         window.submitFeedback = async function() {
@@ -378,11 +385,9 @@
             if(!text.trim()) return alert("請輸入意見內容");
             try {
                 if (editingFeedbackId) {
-                    // 更新已有的意見
                     await updateDoc(doc(db, "feedbacks", editingFeedbackId), { content: text });
                     alert("✅ 意見已成功更新！");
                 } else {
-                    // 新增意見
                     await addDoc(collection(db, "feedbacks"), {
                         className: myClass,
                         studentName: currentFeedbackStudent ? currentFeedbackStudent.name : 'N/A',
@@ -398,7 +403,6 @@
             }
         }
 
-        // 查閱清單的編輯與刪除
         window.editFeedback = function(id, content) {
             editingFeedbackId = id;
             document.getElementById('feedback-student-name').innerText = "編輯現有意見";
@@ -592,10 +596,10 @@
             const card = document.getElementById('single-teacher-card');
             const extraControls = document.getElementById('teacher-extra-controls');
             
-            // 1. 大方形顯示 (純顯示，無 onclick)
+            // 1. 大方形顯示
             let studentInfoHTML = '';
             if (room.status === 'busy' && room.currentStudent) {
-                studentInfoHTML = `<div class="t-student-info">現局面見：${room.currentStudent.classNo}號 ${room.currentStudent.name}</div>`;
+                studentInfoHTML = `<div class="t-student-info">正在面見：${room.currentStudent.classNo}號 ${room.currentStudent.name}</div>`;
             } else if (room.status === 'break') {
                 studentInfoHTML = `<div class="t-student-info" style="color:#854d0e; background: #fef3c7;">☕ 小休狀態中</div>`;
             }
@@ -640,7 +644,7 @@
             }
             extraControls.innerHTML = actionsHtml;
 
-            // 3. 右側檢視清單 (唯讀)
+            // 3. 右側檢視清單
             renderTeacherReadonlyList(room);
         }
 
@@ -657,7 +661,6 @@
                 sortedSchedule.forEach(stu => {
                     let lockedNext = getLockedNextStudentObj(room);
                     let isNextClass = (lockedNext && lockedNext.classNo === stu.classNo) ? 'is-next-inline' : '';
-                    // 將 pointer-events 設為 none 使其完全無法點擊
                     html += `
                         <div class="student-row s-${stu.state} ${isNextClass}" style="cursor: default; pointer-events: none;">
                             <span>🕒 ${stu.time} | ${stu.classNo}號 ${stu.name}</span>
@@ -685,8 +688,6 @@
             feedbackData.forEach(fb => {
                 const dateObj = fb.timestamp ? fb.timestamp.toDate() : new Date();
                 const timeString = dateObj.toLocaleString('zh-HK', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-                
-                // Content escape 避免 xss
                 const safeContent = fb.content.replace(/`/g, '\\`');
 
                 const html = `
@@ -737,6 +738,7 @@
         <button id="btn-tab-setup" class="nav-btn" style="border-color:#10b981; color:#059669;" onclick="switchView('setup')">📝 班級名單與時間</button>
     </div>
 
+    <!-- 視圖一：大堂登記處 -->
     <div id="view-admin" class="view-section active">
         <div class="floor-tabs" id="floor-tabs-container"></div>
         <div class="grid-container" id="admin-grid"></div>
@@ -747,11 +749,13 @@
         </div>
     </div>
 
+    <!-- 視圖二：等候室資訊 -->
     <div id="view-info" class="view-section">
         <div class="floor-tabs" id="floor-tabs-container-info"></div>
         <div class="waiting-info-grid" id="info-grid"></div>
     </div>
 
+    <!-- 視圖三：課室老師面板 -->
     <div id="view-teacher" class="view-section">
         <div id="teacher-setup" class="teacher-setup">
             <h2>進入課室操作面板</h2>
@@ -769,25 +773,27 @@
                         <button class="btn-back" onclick="exitTeacherPanel()">⬅️ 返回重新選擇課室</button>
                     </div>
                 </div>
-                <div class="teacher-readonly-list" id="teacher-readonly-list">
-                    </div>
+                <div class="teacher-readonly-list" id="teacher-readonly-list"></div>
             </div>
         </div>
     </div>
 
+    <!-- 視圖四：系統總覽 -->
     <div id="view-master" class="view-section">
         <div class="grid-container" id="master-grid" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));"></div>
     </div>
     
+    <!-- 視圖五：查閱家長意見 -->
     <div id="view-feedback-list" class="view-section">
         <div class="setup-card" style="background: transparent; box-shadow: none; padding: 0;">
             <h2 style="margin-top:0; color: #0f172a;">📖 家長意見紀錄總覽</h2>
             <p style="color: #64748b; font-size: 1.1em; margin-bottom: 25px;">此處即時顯示全校老師輸入的家長面見備註（最新鮮的紀錄在最前）。</p>
             <div id="feedback-container" class="grid-container" style="grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));">
-                </div>
+            </div>
         </div>
     </div>
 
+    <!-- 視圖六：名單與時間編排 -->
     <div id="view-setup" class="view-section">
         <div class="setup-card">
             <h2 style="margin-top:0;">📝 班級名單與面見時間編輯器</h2>
@@ -805,6 +811,7 @@
         </div>
     </div>
 
+    <!-- 意見回饋輸入視窗 -->
     <div id="feedback-modal" class="modal-overlay">
         <div class="modal-content">
             <h3>📝 紀錄/編輯家長意見</h3>
