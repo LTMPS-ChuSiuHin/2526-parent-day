@@ -81,7 +81,7 @@
         .s-finished::after { content: '✔️ 完成'; font-size: 0.85em; text-decoration: none; display: inline-block; }
 
         .is-next-inline { border: 2px solid #3b82f6 !important; background-color: #eff6ff; position: relative; }
-        .is-next-inline::before { content: '🔒 已鎖定下一位'; position: absolute; left: -10px; top: -12px; background: #3b82f6; color: white; font-size: 0.75em; padding: 4px 10px; border-radius: 10px; box-shadow: var(--shadow-sm); }
+        .is-next-inline::before { content: '🔜 下一位'; position: absolute; left: -10px; top: -12px; background: #3b82f6; color: white; font-size: 0.75em; padding: 4px 10px; border-radius: 10px; box-shadow: var(--shadow-sm); }
 
         /* 等候室資訊面板 */
         .waiting-info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; }
@@ -150,7 +150,6 @@
         /* 編排頁面 (Setup Editor) */
         .setup-card { background: #fff; border-radius: 20px; padding: 30px; box-shadow: var(--shadow-md); margin-bottom: 20px; overflow-x: auto; }
         
-        /* 自動編排設定區 */
         .auto-schedule-box {
             background: #f8fafc; padding: 15px 20px; border-radius: 16px; border: 2px dashed #cbd5e1; margin-bottom: 20px;
             display: flex; flex-wrap: wrap; gap: 15px; align-items: center;
@@ -184,7 +183,8 @@
         /* Modal */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
         .modal-overlay.active { display: flex; animation: fadeIn 0.2s; }
-        .modal-content { background: #fff; padding: 30px; border-radius: 24px; width: 90%; max-width: 500px; box-shadow: var(--shadow-lg); }
+        .modal-content { background: #fff; padding: 30px; border-radius: 24px; width: 90%; max-width: 500px; box-shadow: var(--shadow-lg); text-align: left; }
+        .modal-content h3 { margin-top: 0; font-size: 1.5em; text-align: center; }
         .modal-content textarea { width: 100%; height: 150px; padding: 15px; border-radius: 12px; border: 2px solid #cbd5e1; font-size: 1.1em; margin-bottom: 20px; resize: none; box-sizing: border-box; }
         .modal-btns { display: flex; justify-content: flex-end; gap: 10px; }
     </style>
@@ -211,13 +211,14 @@
         let currentFloor = '一樓 XSpace'; 
         let myClass = null; 
         let editingFeedbackId = null; 
+        let editingFeedbackClass = null; 
         
         const floorMap = {
             '一樓 XSpace': ['1A', '1B', '1C', '1D', '1E', '2A'],
             '二樓 InnoSpace': ['2B', '2C', '2D', '2E', '3A', '3B'],
             '四樓 音樂室': ['3C', '3D', '3E', '4A', '4B', '4C'],
             '五樓 音樂室': ['4D', '4E', '5A', '5B', '5C', '5D'],
-            '6E 課室': ['5E']
+            '6E 課室': ['5E', '6A', '6B', '6C', '6D', '6E']
         };
         const classList = Object.values(floorMap).flat();
 
@@ -226,7 +227,7 @@
             renderAll();
         });
 
-        const qFeedback = query(collection(db, "feedbacks"), orderBy("timestamp", "desc"));
+        const qFeedback = query(collection(db, "feedbacks")); 
         onSnapshot(qFeedback, (snapshot) => {
             feedbackData = [];
             snapshot.docs.forEach(doc => { feedbackData.push({ id: doc.id, ...doc.data() }); });
@@ -284,49 +285,38 @@
 
         window.switchFloor = function(floorName) { currentFloor = floorName; renderAll(); }
 
-        // 等候室操作面見狀態的核心邏輯
         window.advanceStudentState = function(className, classNo) {
             let room = systemData[className] || { status: 'free', schedule: [] };
             let student = room.schedule.find(s => s.classNo === classNo);
 
-            // 若由 Pending 轉為 Registered (永遠容許)
-            if (student.state === 'pending') { 
-                saveSnapshot(room);
-                student.state = 'registered'; 
-                updateLockedNextStudent(room);
-                updateFirebase(className, room);
+            if (student.state === 'registered' && room.status === 'break') {
+                alert("老師正在小休，暫時不能安排面見！\n請等待老師狀態改為「空閒中」。");
                 return;
-            } 
-            
-            // 若安排已登記的家長入內面見
-            if (student.state === 'registered') {
-                // 防護 1: 老師正在小休
-                if (room.status === 'break') {
-                    alert("老師正在小休，暫時不能安排面見！\n請等待老師狀態改為「空閒中」。");
-                    return;
-                }
-                // 防護 2: 課室正在面見中
-                if (room.status === 'busy') {
-                    alert("課室正在面見中！\n等候室不能安排下一位家長，請等待老師結束當前面見轉為「空閒中」。");
-                    return;
-                }
+            }
 
-                saveSnapshot(room);
-                student.state = 'interviewing';
-                room.status = 'busy'; 
-                room.startTime = Date.now();
-                room.currentStudent = { name: student.name, classNo: student.classNo };
-                
-                updateLockedNextStudent(room);
-                updateFirebase(className, room);
+            if (student.state === 'registered' && room.status === 'busy') {
+                alert("課室正在面見中！\n等候室不能安排下一位家長，請等待老師結束當前面見轉為「空閒中」。");
                 return;
-            } 
-            
-            // 防護 3: 等候室試圖結束面見
+            }
+
             if (student.state === 'interviewing') {
                 alert("等候室不能結束面見！\n必須由老師於「班主任面見面版」點擊結束。");
                 return;
             }
+
+            saveSnapshot(room);
+
+            if (student.state === 'pending') { student.state = 'registered'; } 
+            else if (student.state === 'registered') {
+                let current = room.schedule.find(s => s.state === 'interviewing');
+                if (current) current.state = 'finished';
+                student.state = 'interviewing';
+                room.status = 'busy'; room.startTime = Date.now();
+                room.currentStudent = { name: student.name, classNo: student.classNo };
+            } 
+            
+            updateLockedNextStudent(room);
+            updateFirebase(className, room);
         }
 
         window.undoLastAction = function(className) {
@@ -378,17 +368,29 @@
             updateFirebase(myClass, room);
         }
 
-        // 意見 Modal
+        // =======================
+        // 意見 Modal 邏輯 (智能下拉選單)
+        // =======================
         window.openFeedbackModal = function() {
             if (!myClass || !systemData[myClass]) return;
+            editingFeedbackClass = myClass;
             let room = systemData[myClass];
-            currentFeedbackStudent = room.currentStudent; 
-            if(!currentFeedbackStudent) {
-                let finished = room.schedule.filter(s => s.state === 'finished');
-                if(finished.length > 0) currentFeedbackStudent = finished[finished.length - 1];
+            
+            let defaultStudent = room.currentStudent; 
+            if(!defaultStudent) {
+                let finished = (room.schedule || []).filter(s => s.state === 'finished');
+                if(finished.length > 0) defaultStudent = finished[finished.length - 1];
             }
-            document.getElementById('feedback-student-name').innerText = currentFeedbackStudent 
-                ? `${currentFeedbackStudent.classNo}號 ${currentFeedbackStudent.name}` : '一般班級備註 (目前無對象)';
+
+            let selectHtml = `<option value="N/A" data-name="N/A">一般班級備註 (目前無特定對象)</option>`;
+            let sortedSchedule = [...(room.schedule || [])].sort((a,b) => parseInt(a.classNo || 0) - parseInt(b.classNo || 0));
+            
+            sortedSchedule.forEach(stu => {
+                let selected = (defaultStudent && defaultStudent.classNo === stu.classNo) ? "selected" : "";
+                selectHtml += `<option value="${stu.classNo}" data-name="${stu.name}" ${selected}>${stu.classNo}號 ${stu.name}</option>`;
+            });
+
+            document.getElementById('feedback-student-select').innerHTML = selectHtml;
             document.getElementById('feedback-modal').classList.add('active');
             document.getElementById('feedback-text').value = '';
         }
@@ -401,15 +403,22 @@
         window.submitFeedback = async function() {
             const text = document.getElementById('feedback-text').value;
             if(!text.trim()) return alert("請輸入意見內容");
+
+            const selectEl = document.getElementById('feedback-student-select');
+            const selectedOption = selectEl.options[selectEl.selectedIndex];
+            const classNo = selectedOption.value;
+            const studentName = selectedOption.getAttribute('data-name');
+            const targetClass = editingFeedbackClass || myClass;
+
             try {
                 if (editingFeedbackId) {
-                    await updateDoc(doc(db, "feedbacks", editingFeedbackId), { content: text });
+                    await updateDoc(doc(db, "feedbacks", editingFeedbackId), { content: text, classNo: classNo, studentName: studentName });
                     alert("✅ 意見已成功更新！");
                 } else {
                     await addDoc(collection(db, "feedbacks"), {
-                        className: myClass,
-                        studentName: currentFeedbackStudent ? currentFeedbackStudent.name : 'N/A',
-                        classNo: currentFeedbackStudent ? currentFeedbackStudent.classNo : 'N/A',
+                        className: targetClass,
+                        studentName: studentName,
+                        classNo: classNo,
                         content: text,
                         timestamp: serverTimestamp()
                     });
@@ -419,9 +428,22 @@
             } catch (e) { alert("上傳失敗，請檢查網絡連線。"); }
         }
 
-        window.editFeedback = function(id, content) {
+        window.editFeedback = function(id, content, fClass, fClassNo) {
             editingFeedbackId = id;
-            document.getElementById('feedback-student-name').innerText = "編輯現有意見";
+            editingFeedbackClass = fClass;
+
+            let selectHtml = `<option value="N/A" data-name="N/A">一般班級備註 (目前無特定對象)</option>`;
+            if (systemData[fClass] && systemData[fClass].schedule) {
+                 let sortedSchedule = [...systemData[fClass].schedule].sort((a,b) => parseInt(a.classNo || 0) - parseInt(b.classNo || 0));
+                 sortedSchedule.forEach(stu => {
+                     let selected = (fClassNo === stu.classNo) ? "selected" : "";
+                     selectHtml += `<option value="${stu.classNo}" data-name="${stu.name}" ${selected}>${stu.classNo}號 ${stu.name}</option>`;
+                 });
+            } else {
+                 selectHtml += `<option value="${fClassNo}" data-name="N/A" selected>${fClassNo}號</option>`;
+            }
+            
+            document.getElementById('feedback-student-select').innerHTML = selectHtml;
             document.getElementById('feedback-text').value = content;
             document.getElementById('feedback-modal').classList.add('active');
         }
@@ -598,6 +620,11 @@
             renderFloorTabs('floor-tabs-container'); renderFloorTabs('floor-tabs-container-info');
             renderAdminGrid(); renderInfoGrid(); renderMasterGrid();
             if (myClass) renderSingleTeacherPanel();
+            
+            if (document.getElementById('view-feedback-list').classList.contains('active')) {
+                renderFeedbackList();
+            }
+            
             updateTimersUI(); 
         }
 
@@ -681,7 +708,10 @@
                 const room = systemData[className] || { status: 'free', schedule: [] };
                 const lockedNext = getLockedNextStudentObj(room);
                 const currentName = room.currentStudent ? `${room.currentStudent.classNo}號 ${room.currentStudent.name}` : '無';
-                const nextName = lockedNext ? `${lockedNext.time} - ${lockedNext.classNo}號 ${lockedNext.name}` : '目前無人等候';
+                
+                // 等候室大螢幕：取消預約面見時間顯示，只保留學號與姓名
+                const nextName = lockedNext ? `${lockedNext.classNo}號 ${lockedNext.name}` : '目前無人等候';
+                
                 let curStatusHtml = room.status === 'break' ? '🟡 老師稍事休息，請稍候' : (room.status === 'free' ? '🟢 目前空閒，準備叫號' : `🔴 面見中：<strong>${currentName}</strong>`);
                 const card = document.createElement('div'); card.className = `info-card ${room.status}`;
                 card.innerHTML = `<div class="i-class">${className} 班</div><div class="i-current">${curStatusHtml}</div>
@@ -722,7 +752,7 @@
                 studentInfoHTML = `<div class="t-student-info" style="color:#854d0e; background: #fef3c7;">☕ 小休狀態中</div>`;
             }
 
-            let nextInfo = lockedNext ? `🔜 已鎖定下一位：${lockedNext.time} (${lockedNext.classNo}號 ${lockedNext.name})` : `目前無人登記等候`;
+            let nextInfo = lockedNext ? `🔜 下一位：${lockedNext.time} (${lockedNext.classNo}號 ${lockedNext.name})` : `目前無人登記等候`;
             
             let centerText = '';
             if (room.status === 'free') centerText = '🟢 空閒中 (等待登記處安排入內)';
@@ -788,22 +818,45 @@
         }
 
         // =======================
-        // 查閱家長意見列表
+        // 查閱家長意見列表 (加入智能篩選與排序)
         // =======================
         window.renderFeedbackList = function() {
             const container = document.getElementById('feedback-container');
             if(!container) return;
             container.innerHTML = '';
 
-            if(feedbackData.length === 0) {
-                container.innerHTML = `<p style="color:#64748b; font-size:1.2em; grid-column: 1/-1;">目前系統中尚無任何家長意見紀錄。</p>`;
+            const filterValue = document.getElementById('feedback-filter-select').value;
+            
+            let filteredData = feedbackData;
+            if (filterValue !== 'all') {
+                filteredData = feedbackData.filter(fb => fb.className && fb.className.startsWith(filterValue));
+            }
+
+            if(filteredData.length === 0) {
+                container.innerHTML = `<p style="color:#64748b; font-size:1.2em; grid-column: 1/-1;">目前系統中尚無符合條件的家長意見紀錄。</p>`;
                 return;
             }
 
-            feedbackData.forEach(fb => {
+            filteredData.sort((a, b) => {
+                const classA = a.className || "";
+                const classB = b.className || "";
+                if (classA !== classB) {
+                    return classA.localeCompare(classB);
+                }
+                const noA = parseInt(a.classNo) || 999;
+                const noB = parseInt(b.classNo) || 999;
+                if (noA !== noB) {
+                    return noA - noB;
+                }
+                const timeA = a.timestamp ? a.timestamp.toMillis() : 0;
+                const timeB = b.timestamp ? b.timestamp.toMillis() : 0;
+                return timeB - timeA; 
+            });
+
+            filteredData.forEach(fb => {
                 const dateObj = fb.timestamp ? fb.timestamp.toDate() : new Date();
                 const timeString = dateObj.toLocaleString('zh-HK', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-                const safeContent = fb.content.replace(/`/g, '\\`');
+                const safeContent = fb.content.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/'/g, "\\'").replace(/\n/g, '\\n');
 
                 const html = `
                     <div class="feedback-card">
@@ -814,7 +867,7 @@
                         <div class="fb-student">👤 ${fb.classNo}號 ${fb.studentName}</div>
                         <div class="fb-content">${fb.content}</div>
                         <div class="fb-actions">
-                            <button class="btn-fb-edit" onclick="editFeedback('${fb.id}', \`${safeContent}\`)">✏️ 編輯</button>
+                            <button class="btn-fb-edit" onclick="editFeedback('${fb.id}', \`${safeContent}\`, '${fb.className}', '${fb.classNo}')">✏️ 編輯</button>
                             <button class="btn-fb-delete" onclick="deleteFeedback('${fb.id}')">🗑️ 刪除</button>
                         </div>
                     </div>
@@ -866,6 +919,16 @@
     <!-- 視圖二：等候室資訊 -->
     <div id="view-info" class="view-section">
         <div class="floor-tabs" id="floor-tabs-container-info"></div>
+        
+        <!-- 新增：問卷調查橫幅 -->
+        <div style="display: flex; justify-content: center; align-items: center; background: #fff; padding: 20px 40px; border-radius: 24px; box-shadow: var(--shadow-md); margin-bottom: 30px; gap: 25px; max-width: 750px; margin-left: auto; margin-right: auto; border: 2px solid #bfdbfe;">
+            <img src="2526parentday.png" alt="問卷調查 QR Code" style="width: 130px; height: 130px; border-radius: 12px; border: 1px solid #cbd5e1; padding: 5px;">
+            <div style="text-align: left;">
+                <div style="font-size: 2.2em; font-weight: 900; color: #1e3a8a; margin-bottom: 8px;">家長日問卷調查</div>
+                <div style="font-size: 1.4em; color: #3b82f6; font-weight: bold;">請家長抽空掃描完成，感謝您！</div>
+            </div>
+        </div>
+
         <div class="waiting-info-grid" id="info-grid"></div>
     </div>
 
@@ -873,7 +936,7 @@
     <div id="view-teacher" class="view-section">
         <div id="teacher-setup" class="teacher-setup">
             <h2>進入班主任操作面版</h2>
-            <select id="select-grade"><option value="1">一年級</option><option value="2">二年級</option><option value="3">三年級</option><option value="4">四年級</option><option value="5">五年級</option></select>
+            <select id="select-grade"><option value="1">一年級</option><option value="2">二年級</option><option value="3">三年級</option><option value="4">四年級</option><option value="5">五年級</option><option value="6">六年級</option></select>
             <select id="select-class"><option value="A">A 班</option><option value="B">B 班</option><option value="C">C 班</option><option value="D">D 班</option><option value="E">E 班</option></select>
             <button class="btn-primary" onclick="enterTeacherPanel()">確認並進入</button>
         </div>
@@ -901,7 +964,19 @@
     <div id="view-feedback-list" class="view-section">
         <div class="setup-card" style="background: transparent; box-shadow: none; padding: 0;">
             <h2 style="margin-top:0; color: #0f172a;">📖 家長意見紀錄總覽</h2>
-            <p style="color: #64748b; font-size: 1.1em; margin-bottom: 25px;">此處即時顯示全校老師輸入的家長面見備註（最新鮮的紀錄在最前）。</p>
+            <div style="display: flex; gap: 15px; margin-bottom: 20px; align-items: center; flex-wrap: wrap;">
+                <strong style="color: #0f172a; font-size: 1.2em;">🔍 篩選顯示：</strong>
+                <select id="feedback-filter-select" style="padding: 10px; font-size: 1.1em; border-radius: 10px; border: 2px solid #cbd5e1; outline: none;" onchange="renderFeedbackList()">
+                    <option value="all" selected>🏫 全校</option>
+                    <option value="1">一年級</option>
+                    <option value="2">二年級</option>
+                    <option value="3">三年級</option>
+                    <option value="4">四年級</option>
+                    <option value="5">五年級</option>
+                    <option value="6">六年級</option>
+                </select>
+            </div>
+            
             <div id="feedback-container" class="grid-container" style="grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));">
             </div>
         </div>
@@ -915,8 +990,8 @@
             
             <select id="edit-class-select" style="padding:10px 15px; font-size:1.2em; border-radius:12px; border: 2px solid #cbd5e1; margin-bottom: 15px; width: 100%; max-width: 300px;" onchange="loadScheduleEditor()">
                 <script>
-                    const grades = [1,2,3,4,5]; const classes = ['A','B','C','D','E'];
-                    grades.forEach(g => classes.forEach(c => document.write(`<option value="${g}${c}">${g}${c} 班</option>`)));
+                    const grades2 = [1,2,3,4,5,6]; const classes2 = ['A','B','C','D','E'];
+                    grades2.forEach(g => classes2.forEach(c => document.write(`<option value="${g}${c}">${g}${c} 班</option>`)));
                 </script>
             </select>
 
@@ -948,7 +1023,10 @@
     <div id="feedback-modal" class="modal-overlay">
         <div class="modal-content">
             <h3>📝 紀錄/編輯家長意見</h3>
-            <p style="color: #64748b; font-weight:bold; margin-bottom:15px;">關聯學生：<span id="feedback-student-name" style="color:#0f172a;"></span></p>
+            <div style="margin-bottom: 15px; text-align: left;">
+                <label style="color: #64748b; font-weight:bold; display:block; margin-bottom:8px;">關聯學生 (下拉可變更)：</label>
+                <select id="feedback-student-select" style="width: 100%; padding: 12px; border-radius: 10px; border: 2px solid #cbd5e1; font-size: 1.1em; outline: none;"></select>
+            </div>
             <textarea id="feedback-text" placeholder="請輸入對這位家長的觀察、討論重點或後續跟進事項..."></textarea>
             <div class="modal-btns">
                 <button class="btn-back" style="padding:10px 20px; border-radius:10px;" onclick="closeFeedbackModal()">取消</button>
