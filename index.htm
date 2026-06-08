@@ -42,8 +42,12 @@
         .floor-btn { background-color: #f8fafc; border: 2px solid #cbd5e1; padding: 12px 24px; border-radius: 16px; cursor: pointer; font-weight: 700; font-size: 1.1em; color: #475569; }
         .floor-btn.active { background-color: #0f172a; color: #fff; border-color: #0f172a; }
 
-        /* 登記處卡片 */
-        .admin-card { background-color: #fff; border-radius: 20px; padding: 20px; box-shadow: var(--shadow-md); border: 1px solid #e2e8f0; display: flex; flex-direction: column; max-height: 550px;}
+        /* 登記處專屬網格排版 (1行3班，共顯示6班為2行) */
+        #admin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        @media (max-width: 1024px) { #admin-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 768px) { #admin-grid { grid-template-columns: 1fr; } }
+
+        .admin-card { background-color: #fff; border-radius: 20px; padding: 20px; box-shadow: var(--shadow-md); border: 1px solid #e2e8f0; display: flex; flex-direction: column;}
         .a-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f1f5f9; padding-bottom: 12px; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;}
         .a-class-name { font-size: 2em; font-weight: 800; color: #334155; }
         
@@ -59,6 +63,8 @@
         .student-list { flex-grow: 1; overflow-y: auto; padding-right: 10px; margin-top: 10px; -webkit-overflow-scrolling: touch; }
         .student-list::-webkit-scrollbar { width: 6px; }
         .student-list::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
+
+        #admin-grid .student-list { height: 310px; max-height: 310px; overflow-y: auto; }
 
         .student-row {
             display: flex; justify-content: space-between; align-items: center; padding: 14px 16px;
@@ -77,15 +83,10 @@
         .is-next-inline { border: 2px solid #3b82f6 !important; background-color: #eff6ff; position: relative; }
         .is-next-inline::before { content: '🔒 已鎖定下一位'; position: absolute; left: -10px; top: -12px; background: #3b82f6; color: white; font-size: 0.75em; padding: 4px 10px; border-radius: 10px; box-shadow: var(--shadow-sm); }
 
-        /* 等候室資訊面板 (強制 3 行) */
-        .waiting-info-grid { 
-            display: grid; 
-            grid-template-columns: repeat(3, 1fr); 
-            gap: 25px; 
-        }
+        /* 等候室資訊面板 */
+        .waiting-info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; }
         @media (max-width: 1000px) { .waiting-info-grid { grid-template-columns: repeat(2, 1fr); } }
         @media (max-width: 650px) { .waiting-info-grid { grid-template-columns: 1fr; } }
-
         .info-card { background: #fff; border-radius: 24px; padding: 25px; box-shadow: var(--shadow-md); border-top: 8px solid #cbd5e1; text-align: center; }
         .info-card.busy { border-top-color: #ef4444; }
         .info-card.free { border-top-color: #10b981; }
@@ -96,31 +97,27 @@
         .i-next-title { font-size: 1em; color: #3b82f6; font-weight: bold; margin-bottom: 5px; }
         .i-next-name { font-size: 1.8em; font-weight: 800; color: #1e3a8a; }
 
-        /* 課室老師面板設定區 */
+        /* 班主任面版：靈活的 Flexbox 雙欄佈局 */
         .teacher-setup { background: #fff; max-width: 500px; margin: 40px auto; padding: 40px; border-radius: 24px; box-shadow: var(--shadow-lg); text-align: center; }
         .teacher-setup select { width: 100%; padding: 16px; margin-bottom: 25px; font-size: 1.3em; border-radius: 16px; border: 2px solid #cbd5e1; }
         .btn-primary { background: #0f172a; color: white; width: 100%; padding: 18px; font-size: 1.3em; font-weight: bold; border-radius: 16px; border: none; cursor: pointer; }
-        .btn-primary:hover { background: #1e293b; }
-
-        /* 課室老師面版：左右雙欄佈局 */
+        
         .teacher-panel-layout {
-            display: grid;
-            grid-template-columns: 1fr 400px;
+            display: flex;
+            flex-wrap: wrap;
             gap: 30px;
-            max-width: 1100px;
+            max-width: 1200px;
             margin: 0 auto;
-            text-align: left;
+            align-items: flex-start;
         }
-        @media (max-width: 900px) {
-            .teacher-panel-layout { grid-template-columns: 1fr; }
-        }
-
+        .teacher-left-col { flex: 1 1 350px; min-width: 300px; }
+        .teacher-right-col { flex: 1.5 1 400px; min-width: 350px; }
+        
         .single-teacher-panel { display: none; }
         .single-teacher-panel.active { display: block; animation: fadeIn 0.4s ease; }
         
-        /* 大方形狀態顯示 (不可點擊) */
         .teacher-card {
-            aspect-ratio: 1 / 1; border-radius: 36px; color: white; padding: 30px;
+            aspect-ratio: 1 / 1; border-radius: 36px; color: white; padding: 25px;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             box-shadow: var(--shadow-lg); position: relative; margin-bottom: 20px; transition: all 0.3s;
             cursor: default; 
@@ -129,11 +126,10 @@
         .teacher-card.busy { background: var(--card-busy-grad); }
         .teacher-card.break { background: var(--card-break-grad); }
         
-        .t-class-name { font-size: 5em; font-weight: 900; margin: 0; text-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-        .t-timer { font-size: 4em; font-weight: bold; font-family: monospace; text-shadow: 0 2px 5px rgba(0,0,0,0.2); margin: 10px 0;}
-        .t-student-info { font-size: 1.8em; font-weight: 800; background: #fff; color: #dc2626; padding: 12px 30px; border-radius: 20px; margin-top: 10px; box-shadow: var(--shadow-sm); text-align: center; }
+        .t-class-name { font-size: 4.5em; font-weight: 900; margin: 0; text-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .t-timer { font-size: 3.5em; font-weight: bold; font-family: monospace; text-shadow: 0 2px 5px rgba(0,0,0,0.2); margin: 10px 0;}
+        .t-student-info { font-size: 1.6em; font-weight: 800; background: #fff; color: #dc2626; padding: 10px 25px; border-radius: 20px; margin-top: 5px; box-shadow: var(--shadow-sm); text-align: center; }
         
-        /* 方形外的額外操作區 */
         .teacher-actions-container {
             background: #fff; padding: 20px; border-radius: 24px; box-shadow: var(--shadow-md); 
             display: flex; flex-direction: column; gap: 15px; margin-bottom: 25px;
@@ -144,43 +140,56 @@
         .btn-t-break { background: #fef08a; color: #854d0e; border: 2px solid #fde047; }
         .btn-t-feedback { background: #e0f2fe; color: #0369a1; border: 2px solid #bae6fd; }
         
-        /* 右側不可點擊的狀態名單 */
         .teacher-readonly-list {
             background: #fff; border-radius: 24px; padding: 20px; box-shadow: var(--shadow-md); 
-            display: flex; flex-direction: column; max-height: 650px;
+            display: flex; flex-direction: column; max-height: 750px;
         }
 
-        .btn-back { background: transparent; border: 2px solid #94a3b8; color: #64748b; padding: 14px 28px; border-radius: 20px; font-weight: bold; font-size: 1.1em; cursor: pointer; }
+        .btn-back { background: transparent; border: 2px solid #94a3b8; color: #64748b; padding: 12px 24px; border-radius: 20px; font-weight: bold; font-size: 1.1em; cursor: pointer; }
 
-        /* 編排頁面 */
+        /* 編排頁面 (Setup Editor) */
         .setup-card { background: #fff; border-radius: 20px; padding: 30px; box-shadow: var(--shadow-md); margin-bottom: 20px; overflow-x: auto; }
-        .editor-table { width: 100%; border-collapse: collapse; margin-top: 15px; min-width: 600px;}
+        
+        /* 自動編排設定區 */
+        .auto-schedule-box {
+            background: #f8fafc; padding: 15px 20px; border-radius: 16px; border: 2px dashed #cbd5e1; margin-bottom: 20px;
+            display: flex; flex-wrap: wrap; gap: 15px; align-items: center;
+        }
+        .auto-input { padding: 8px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 1.1em; width: 60px; text-align: center;}
+        
+        .editor-table { width: 100%; border-collapse: collapse; margin-top: 5px; min-width: 600px;}
         .editor-table th { background: #f1f5f9; padding: 12px; text-align: left; font-size: 1.1em; color: #334155; border-radius: 8px;}
-        .editor-table td { padding: 8px; border-bottom: 1px solid #e2e8f0; }
+        .editor-table td { padding: 8px; border-bottom: 1px solid #e2e8f0; background: #fff;}
         .editor-table input { padding: 12px; border-radius: 10px; border: 2px solid #cbd5e1; font-size: 1.1em; width: 100%; box-sizing: border-box; }
+        
+        /* 拖曳樣式 */
+        .editor-table tr { transition: background 0.2s; }
+        .editor-table tr.dragging { opacity: 0.5; background: #e2e8f0 !important; box-shadow: inset 0 0 10px rgba(0,0,0,0.1); }
+        .drag-handle { cursor: grab; text-align: center; color: #94a3b8; font-size: 1.8em; user-select: none; width: 40px; }
+        .drag-handle:active { cursor: grabbing; }
+
         .btn-delete-row { background: #fee2e2; color: #ef4444; border: none; padding: 12px 16px; border-radius: 10px; font-weight: bold; cursor: pointer; width: 100%;}
 
-        /* 意見查閱列表卡片 */
+        /* 意見查閱列表 */
         .feedback-card { background: #fff; border-radius: 20px; padding: 20px; box-shadow: var(--shadow-sm); border: 1px solid #e2e8f0; border-left: 6px solid #3b82f6; display: flex; flex-direction: column; gap: 10px; }
         .fb-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #cbd5e1; padding-bottom: 10px; }
         .fb-class { font-size: 1.3em; font-weight: 800; color: #1e3a8a; background: #eff6ff; padding: 4px 12px; border-radius: 10px;}
         .fb-time { font-size: 0.9em; color: #64748b; }
         .fb-student { font-size: 1.1em; font-weight: 700; color: #0f172a; margin-top: 5px;}
         .fb-content { font-size: 1.1em; color: #334155; background: #f8fafc; padding: 15px; border-radius: 12px; white-space: pre-wrap; line-height: 1.5;}
-        
         .fb-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; }
         .btn-fb-edit { background: #e0f2fe; color: #0369a1; border: none; padding: 6px 16px; border-radius: 10px; font-weight: bold; cursor: pointer; }
         .btn-fb-delete { background: #fee2e2; color: #b11c1c; border: none; padding: 6px 16px; border-radius: 10px; font-weight: bold; cursor: pointer; }
 
-        /* 意見回饋 Modal */
+        /* Modal */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
         .modal-overlay.active { display: flex; animation: fadeIn 0.2s; }
         .modal-content { background: #fff; padding: 30px; border-radius: 24px; width: 90%; max-width: 500px; box-shadow: var(--shadow-lg); }
-        .modal-content h3 { margin-top: 0; font-size: 1.5em; }
         .modal-content textarea { width: 100%; height: 150px; padding: 15px; border-radius: 12px; border: 2px solid #cbd5e1; font-size: 1.1em; margin-bottom: 20px; resize: none; box-sizing: border-box; }
         .modal-btns { display: flex; justify-content: flex-end; gap: 10px; }
     </style>
 
+    <!-- 載入 Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, setDoc, updateDoc, deleteDoc, collection, onSnapshot, addDoc, serverTimestamp, writeBatch, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -245,8 +254,9 @@
                 const stillValid = registered.find(s => s.classNo === room.lockedNextClassNo);
                 if (stillValid) return; 
             }
-            registered.sort((a, b) => a.time.localeCompare(b.time));
-            room.lockedNextClassNo = registered[0].classNo;
+            // 不要改變原本陣列，複製出來排序找最前的時間
+            const tempSorted = [...registered].sort((a, b) => a.time.localeCompare(b.time));
+            room.lockedNextClassNo = tempSorted[0].classNo;
         }
 
         function getLockedNextStudentObj(room) {
@@ -255,15 +265,12 @@
         }
 
         // =======================
-        // Window 綁定功能 (UI 互動)
+        // UI 切換及全局功能
         // =======================
         window.switchView = function(viewName) {
             if (viewName === 'feedback-list') {
                 const pwd = prompt("請輸入管理員密碼以查閱意見：");
-                if (pwd !== "ltmps") {
-                    alert("密碼錯誤，拒絕存取。");
-                    return;
-                }
+                if (pwd !== "ltmps") { alert("密碼錯誤，拒絕存取。"); return; }
             }
 
             document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
@@ -282,7 +289,6 @@
             let room = systemData[className] || { status: 'free', schedule: [] };
             let student = room.schedule.find(s => s.classNo === classNo);
 
-            // 防護鎖定：如果正嘗試安排入內，但老師在小休，則阻擋
             if (student.state === 'registered' && room.status === 'break') {
                 alert("老師正在小休，暫時不能安排面見！\n請等待老師狀態改為「空閒中」。");
                 return;
@@ -315,7 +321,7 @@
             }
         }
 
-        // === 老師面板獨立邏輯 ===
+        // === 班主任面板邏輯 ===
         window.enterTeacherPanel = function() {
             myClass = `${document.getElementById('select-grade').value}${document.getElementById('select-class').value}`;
             document.getElementById('teacher-setup').style.display = 'none';
@@ -328,7 +334,6 @@
             document.getElementById('teacher-panel-view').classList.remove('active');
         }
 
-        // 結束面見按鈕
         window.toggleTeacherStatus = function() {
             if (!myClass) return;
             let room = systemData[myClass] || { status: 'free', schedule: [] };
@@ -346,20 +351,17 @@
             }
         }
 
-        // 小休按鈕
         window.setBreakStatus = function() {
             if (!myClass) return;
             let room = systemData[myClass];
             saveSnapshot(room);
             if(room.status === 'busy') return alert("請先結束當前面見，再切換小休。");
-            
             room.status = room.status === 'break' ? 'free' : 'break';
             room.startTime = null; 
             updateFirebase(myClass, room);
         }
 
         // 意見 Modal
-        let currentFeedbackStudent = null;
         window.openFeedbackModal = function() {
             if (!myClass || !systemData[myClass]) return;
             let room = systemData[myClass];
@@ -369,7 +371,7 @@
                 if(finished.length > 0) currentFeedbackStudent = finished[finished.length - 1];
             }
             document.getElementById('feedback-student-name').innerText = currentFeedbackStudent 
-                ? `${currentFeedbackStudent.classNo}號 ${currentFeedbackStudent.name}` : '一般班級備註 (目前無面見對象)';
+                ? `${currentFeedbackStudent.classNo}號 ${currentFeedbackStudent.name}` : '一般班級備註 (目前無對象)';
             document.getElementById('feedback-modal').classList.add('active');
             document.getElementById('feedback-text').value = '';
         }
@@ -397,9 +399,7 @@
                     alert("✅ 意見已成功儲存至 Firebase 雲端！");
                 }
                 closeFeedbackModal();
-            } catch (e) {
-                console.error(e); alert("上傳失敗，請檢查網絡連線。");
-            }
+            } catch (e) { alert("上傳失敗，請檢查網絡連線。"); }
         }
 
         window.editFeedback = function(id, content) {
@@ -411,24 +411,16 @@
 
         window.deleteFeedback = async function(id) {
             if(confirm("確定要永久刪除這筆意見紀錄嗎？")) {
-                try {
-                    await deleteDoc(doc(db, "feedbacks", id));
-                    alert("✅ 已刪除");
-                } catch(e) {
-                    alert("刪除失敗");
-                }
+                try { await deleteDoc(doc(db, "feedbacks", id)); alert("✅ 已刪除"); } 
+                catch(e) { alert("刪除失敗"); }
             }
         }
 
-        // 安全重設
         window.resetDayStatus = async function() {
             const pwd = prompt("請輸入管理員密碼以進行安全重設：");
-            if (pwd !== "ltmps") {
-                alert("密碼錯誤，拒絕重設。");
-                return;
-            }
-
-            if (!confirm('⚠️ 警告：這會將全校的面見狀態及家長等候進度重置為「未到達/空閒」。\n（已輸入的名單不會被刪除）。確定執行？')) return;
+            if (pwd !== "ltmps") { alert("密碼錯誤，拒絕重設。"); return; }
+            if (!confirm('⚠️ 警告：這會將全校的面見狀態及進度重置為「未到達/空閒」。\n確定執行？')) return;
+            
             const batch = writeBatch(db);
             classList.forEach(className => {
                 let room = systemData[className] || { schedule: [] };
@@ -442,27 +434,32 @@
             catch (e) { alert('重置失敗，請檢查網絡。'); }
         }
 
-        // 內頁編輯器
+        // =======================
+        // 動態表格編輯器 (排序、拖曳、自動安排時間)
+        // =======================
         window.loadScheduleEditor = function() {
             const editClass = document.getElementById('edit-class-select').value;
             const container = document.getElementById('editor-table-container');
             let room = systemData[editClass] || { schedule: [] };
             let schedule = room.schedule || [];
-            schedule.sort((a,b) => parseInt(a.classNo || 0) - parseInt(b.classNo || 0));
-
+            
+            // 取消預設排序，尊重原陣列順序
             let html = `
                 <table class="editor-table">
-                    <thead><tr><th style="width:15%;">學號</th><th style="width:35%;">學生姓名</th><th style="width:30%;">預約時間</th><th style="width:20%;">操作</th></tr></thead>
+                    <thead><tr><th style="width:40px;">順序</th><th style="width:15%;">學號</th><th style="width:30%;">學生姓名</th><th style="width:25%;">預約時間</th><th style="width:20%;">操作</th></tr></thead>
                     <tbody id="schedule-tbody">
             `;
             if (schedule.length === 0) { html += generateRowHTML("", "", "09:00", "pending"); } 
             else { schedule.forEach(stu => { html += generateRowHTML(stu.classNo, stu.name, stu.time, stu.state); }); }
             html += `</tbody></table>`;
             container.innerHTML = html;
+            
+            initDragAndDrop(); // 綁定拖曳事件
         }
 
         function generateRowHTML(no, name, time, state) {
-            return `<tr>
+            return `<tr draggable="true">
+                <td class="drag-handle" title="按住拖曳以改變次序">&#9776;</td>
                 <td><input type="number" class="input-no" value="${no}" placeholder="例: 1"></td>
                 <td><input type="text" class="input-name" value="${name}" placeholder="請輸入姓名"></td>
                 <td><input type="time" class="input-time" value="${time}"></td>
@@ -478,6 +475,96 @@
             if(tbody) tbody.insertAdjacentHTML('beforeend', generateRowHTML("", "", "09:00", "pending"));
         }
 
+        // 按鈕排序功能
+        window.sortEditor = function(type) {
+            const tbody = document.getElementById('schedule-tbody');
+            if(!tbody) return;
+            let rows = Array.from(tbody.querySelectorAll('tr'));
+            rows.sort((a, b) => {
+                if(type === 'classNo') {
+                    let valA = parseInt(a.querySelector('.input-no').value) || 0;
+                    let valB = parseInt(b.querySelector('.input-no').value) || 0;
+                    return valA - valB;
+                } else if (type === 'time') {
+                    let valA = a.querySelector('.input-time').value || "";
+                    let valB = b.querySelector('.input-time').value || "";
+                    return valA.localeCompare(valB);
+                }
+            });
+            // 重新插入DOM以改變排序
+            rows.forEach(row => tbody.appendChild(row));
+        }
+
+        // 自動安排面見時間計算
+        window.applyAutoSchedule = function() {
+            const startTime = document.getElementById('auto-start-time').value; 
+            const duration = parseInt(document.getElementById('auto-duration').value) || 10;
+            const bufferCount = parseInt(document.getElementById('auto-buffer-count').value) || 5;
+            const bufferTime = parseInt(document.getElementById('auto-buffer-time').value) || 15;
+
+            if (!startTime) return alert("請輸入首位時間！");
+
+            let [hours, mins] = startTime.split(':').map(Number);
+            let currentTime = new Date(2000, 0, 1, hours, mins); 
+
+            const rows = document.querySelectorAll('#schedule-tbody tr');
+            let studentCount = 0;
+
+            rows.forEach((row, index) => {
+                // 如果已達到緩衝人數 (且不是第一位)，加上緩衝時間
+                if (studentCount > 0 && studentCount % bufferCount === 0) {
+                    currentTime.setMinutes(currentTime.getMinutes() + bufferTime);
+                }
+
+                // 寫入時間
+                let h = String(currentTime.getHours()).padStart(2, '0');
+                let m = String(currentTime.getMinutes()).padStart(2, '0');
+                row.querySelector('.input-time').value = `${h}:${m}`;
+
+                // 遞增下一位的時間
+                currentTime.setMinutes(currentTime.getMinutes() + duration);
+                studentCount++;
+            });
+            alert("✅ 自動排程已套用至畫面上，請檢查確認後，點擊最下方「儲存此班名單至雲端」。");
+        }
+
+        // Drag and drop implementation
+        function initDragAndDrop() {
+            const tbody = document.getElementById('schedule-tbody');
+            if (!tbody) return;
+            let draggedRow = null;
+
+            tbody.addEventListener('dragstart', function (e) {
+                draggedRow = e.target.closest('tr');
+                if (draggedRow) setTimeout(() => draggedRow.classList.add('dragging'), 0);
+            });
+
+            tbody.addEventListener('dragend', function (e) {
+                if (draggedRow) { draggedRow.classList.remove('dragging'); draggedRow = null; }
+            });
+
+            tbody.addEventListener('dragover', function (e) {
+                e.preventDefault(); 
+                const afterElement = getDragAfterElement(tbody, e.clientY);
+                const tr = e.target.closest('tr');
+                if (draggedRow && tr && draggedRow !== tr) {
+                    if (afterElement == null) tbody.appendChild(draggedRow);
+                    else tbody.insertBefore(draggedRow, afterElement);
+                }
+            });
+        }
+
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('tr:not(.dragging)')];
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                if (offset < 0 && offset > closest.offset) return { offset: offset, element: child };
+                else return closest;
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
+        // 儲存名單
         window.saveClassData = async function() {
             const editClass = document.getElementById('edit-class-select').value;
             const rows = document.getElementById('schedule-tbody').querySelectorAll('tr');
@@ -487,11 +574,12 @@
                 const name = row.querySelector('.input-name').value.trim();
                 const time = row.querySelector('.input-time').value.trim();
                 const state = row.querySelector('.input-state').value;
+                // 保存目前 DOM 的實體順序
                 if (no !== "" && name !== "") newSchedule.push({ classNo: no, name: name, time: time || "09:00", state: state });
             });
             let currentRoomData = systemData[editClass] || { status: 'free', startTime: null, currentStudent: null, lockedNextClassNo: null };
             currentRoomData.schedule = newSchedule;
-            try { await updateFirebase(editClass, currentRoomData); alert(`✅ ${editClass} 班名單儲存成功！`); } 
+            try { await updateFirebase(editClass, currentRoomData); alert(`✅ ${editClass} 班名單及順序儲存成功！`); } 
             catch(e) { alert("儲存失敗！"); }
         }
 
@@ -532,18 +620,29 @@
 
         function renderAdminGrid() {
             const grid = document.getElementById('admin-grid');
-            if (!grid) return; grid.innerHTML = '';
+            if (!grid) return; 
+
+            // 紀錄目前的捲動位置 (防止刷新時彈回最頂)
+            const scrollPositions = {};
+            grid.querySelectorAll('.student-list').forEach(list => {
+                const cls = list.getAttribute('data-class');
+                if (cls) scrollPositions[cls] = list.scrollTop;
+            });
+
+            grid.innerHTML = '';
             floorMap[currentFloor].forEach((className) => {
                 const room = systemData[className] || { status: 'free', schedule: [] };
                 const lockedNext = getLockedNextStudentObj(room);
                 const card = document.createElement('div');
                 card.className = 'admin-card';
 
-                let sortedSchedule = [...(room.schedule || [])].sort((a, b) => a.time.localeCompare(b.time));
-                let scheduleHTML = `<div class="student-list">`;
-                if (sortedSchedule.length === 0) { scheduleHTML += `<div style="text-align:center; padding: 20px; color: #94a3b8;">此班尚未建立名單</div>`; } 
+                // 按照陣列原始順序顯示
+                let scheduleHTML = `<div class="student-list" data-class="${className}">`;
+                if (!room.schedule || room.schedule.length === 0) { 
+                    scheduleHTML += `<div style="text-align:center; padding: 20px; color: #94a3b8;">此班尚未建立名單</div>`; 
+                } 
                 else {
-                    sortedSchedule.forEach(stu => {
+                    room.schedule.forEach(stu => {
                         let isNextClass = (lockedNext && lockedNext.classNo === stu.classNo) ? 'is-next-inline' : '';
                         scheduleHTML += `<div class="student-row s-${stu.state} ${isNextClass}" onclick="advanceStudentState('${className}', '${stu.classNo}')">
                                 <span>🕒 ${stu.time} | ${stu.classNo}號 ${stu.name}</span></div>`;
@@ -560,6 +659,14 @@
                         <button class="btn-undo" onclick="undoLastAction('${className}')" ${!room.historySnapshot ? 'disabled' : ''}>↩️ 復原</button>
                     </div>${scheduleHTML}`;
                 grid.appendChild(card);
+            });
+
+            // 恢復捲動位置
+            grid.querySelectorAll('.student-list').forEach(list => {
+                const cls = list.getAttribute('data-class');
+                if (cls && scrollPositions[cls] !== undefined) {
+                    list.scrollTop = scrollPositions[cls];
+                }
             });
         }
 
@@ -584,8 +691,6 @@
             if (!grid) return; grid.innerHTML = '';
             classList.forEach((className) => {
                 const room = systemData[className] || { status: 'free', schedule: [] };
-                
-                // 計算此班等候人數
                 const waitingCount = (room.schedule || []).filter(s => s.state === 'registered').length;
                 
                 const card = document.createElement('div'); card.className = 'admin-card';
@@ -598,7 +703,7 @@
             });
         }
 
-        // === 老師面板 (左右佈局 + 右側檢視清單) ===
+        // === 班主任面板 (左右佈局 + 右側檢視清單) ===
         function renderSingleTeacherPanel() {
             if (!myClass) return;
             const room = systemData[myClass] || { status: 'free', schedule: [] };
@@ -606,7 +711,6 @@
             const card = document.getElementById('single-teacher-card');
             const extraControls = document.getElementById('teacher-extra-controls');
             
-            // 1. 大方形顯示
             let studentInfoHTML = '';
             if (room.status === 'busy' && room.currentStudent) {
                 studentInfoHTML = `<div class="t-student-info">正在面見：${room.currentStudent.classNo}號 ${room.currentStudent.name}</div>`;
@@ -634,7 +738,6 @@
                 </div>
             `;
 
-            // 2. 左下方按鈕區
             let actionsHtml = '';
             if (room.status === 'free') {
                 actionsHtml = `
@@ -654,7 +757,6 @@
             }
             extraControls.innerHTML = actionsHtml;
 
-            // 3. 右側檢視清單
             renderTeacherReadonlyList(room);
         }
 
@@ -662,13 +764,13 @@
             const container = document.getElementById('teacher-readonly-list');
             if (!container) return;
 
-            let sortedSchedule = [...(room.schedule || [])].sort((a, b) => a.time.localeCompare(b.time));
-            let html = `<h3 style="margin-top:0; color:#1e293b; text-align:center; border-bottom: 2px solid #f1f5f9; padding-bottom:10px;">📋 本班登記及面見狀況</h3><div class="student-list" style="margin:0;">`;
+            // 維持原陣列順序顯示
+            let html = `<h3 style="margin-top:0; color:#1e293b; text-align:center; border-bottom: 2px solid #f1f5f9; padding-bottom:10px;">📋 本班登記及面見狀況</h3><div class="student-list" style="margin:0; height: 100%; max-height: 500px; overflow-y: auto;">`;
             
-            if (sortedSchedule.length === 0) {
+            if (!room.schedule || room.schedule.length === 0) {
                 html += `<p style="text-align:center; color:#94a3b8; font-weight:bold; margin-top:20px;">尚未建立名單</p>`;
             } else {
-                sortedSchedule.forEach(stu => {
+                room.schedule.forEach(stu => {
                     let lockedNext = getLockedNextStudentObj(room);
                     let isNextClass = (lockedNext && lockedNext.classNo === stu.classNo) ? 'is-next-inline' : '';
                     html += `
@@ -718,7 +820,6 @@
             });
         }
 
-        // 計時器
         function updateTimersUI() {
             document.querySelectorAll('.timer-display').forEach(timerEl => {
                 const className = timerEl.getAttribute('data-class');
@@ -740,32 +841,35 @@
     <h1>🏫 25-26 期終家長日面見提示系統</h1>
 
     <div class="nav-tabs">
-        <button id="btn-tab-admin" class="nav-btn active" onclick="switchView('admin')">📋 登記處操作</button>
+        <button id="btn-tab-admin" class="nav-btn active" onclick="switchView('admin')">📋 等候室登記及安排面見</button>
         <button id="btn-tab-info" class="nav-btn" onclick="switchView('info')">📺 等候室大螢幕</button>
-        <button id="btn-tab-teacher" class="nav-btn" onclick="switchView('teacher')">📱 課室老師面板</button>
+        <button id="btn-tab-teacher" class="nav-btn" onclick="switchView('teacher')">📱 班主任面見面版</button>
         <button id="btn-tab-master" class="nav-btn" onclick="switchView('master')">🖥️ 系統總覽</button>
         <button id="btn-tab-feedback-list" class="nav-btn" style="border-color:#3b82f6; color:#2563eb;" onclick="switchView('feedback-list')">📖 查閱意見</button>
         <button id="btn-tab-setup" class="nav-btn" style="border-color:#10b981; color:#059669;" onclick="switchView('setup')">📝 班級名單與時間</button>
     </div>
 
+    <!-- 視圖一：大堂登記處 -->
     <div id="view-admin" class="view-section active">
         <div class="floor-tabs" id="floor-tabs-container"></div>
-        <div class="grid-container" id="admin-grid"></div>
+        <div id="admin-grid"></div>
         <div style="text-align: center; margin-top: 40px;">
             <button class="btn-back" style="border-color: #ef4444; color: #ef4444; background: #fff;" onclick="resetDayStatus()">
-                ⚠️ 安全重設面見進度 (不刪除已輸入名單)
+                ⚠️ 安全重設面見進度 (需輸入密碼)
             </button>
         </div>
     </div>
 
+    <!-- 視圖二：等候室資訊 -->
     <div id="view-info" class="view-section">
         <div class="floor-tabs" id="floor-tabs-container-info"></div>
         <div class="waiting-info-grid" id="info-grid"></div>
     </div>
 
+    <!-- 視圖三：班主任面見面版 -->
     <div id="view-teacher" class="view-section">
         <div id="teacher-setup" class="teacher-setup">
-            <h2>進入課室操作面板</h2>
+            <h2>進入班主任操作面版</h2>
             <select id="select-grade"><option value="1">一年級</option><option value="2">二年級</option><option value="3">三年級</option><option value="4">四年級</option><option value="5">五年級</option></select>
             <select id="select-class"><option value="A">A 班</option><option value="B">B 班</option><option value="C">C 班</option><option value="D">D 班</option><option value="E">E 班</option></select>
             <button class="btn-primary" onclick="enterTeacherPanel()">確認並進入</button>
@@ -773,22 +877,24 @@
         
         <div id="teacher-panel-view" class="single-teacher-panel">
             <div class="teacher-panel-layout">
-                <div>
+                <div class="teacher-left-col">
                     <div id="single-teacher-card"></div>
                     <div id="teacher-extra-controls" class="teacher-actions-container"></div>
                     <div style="text-align:center;">
                         <button class="btn-back" onclick="exitTeacherPanel()">⬅️ 返回重新選擇課室</button>
                     </div>
                 </div>
-                <div class="teacher-readonly-list" id="teacher-readonly-list"></div>
+                <div class="teacher-readonly-list teacher-right-col" id="teacher-readonly-list"></div>
             </div>
         </div>
     </div>
 
+    <!-- 視圖四：系統總覽 -->
     <div id="view-master" class="view-section">
         <div class="grid-container" id="master-grid" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));"></div>
     </div>
     
+    <!-- 視圖五：查閱家長意見 -->
     <div id="view-feedback-list" class="view-section">
         <div class="setup-card" style="background: transparent; box-shadow: none; padding: 0;">
             <h2 style="margin-top:0; color: #0f172a;">📖 家長意見紀錄總覽</h2>
@@ -798,16 +904,36 @@
         </div>
     </div>
 
+    <!-- 視圖六：名單與時間編排 -->
     <div id="view-setup" class="view-section">
         <div class="setup-card">
             <h2 style="margin-top:0;">📝 班級名單與面見時間編輯器</h2>
-            <select id="edit-class-select" style="padding:15px; font-size:1.3em; border-radius:12px; border: 2px solid #cbd5e1; margin: 15px 0; width: 100%; max-width: 350px;" onchange="loadScheduleEditor()">
+            <p style="color: #64748b; font-size: 1.1em; margin-bottom: 15px;">你可以直接點擊最左方的「☰」符號並上下拖曳學生以改變排序。</p>
+            
+            <select id="edit-class-select" style="padding:10px 15px; font-size:1.2em; border-radius:12px; border: 2px solid #cbd5e1; margin-bottom: 15px; width: 100%; max-width: 300px;" onchange="loadScheduleEditor()">
                 <script>
                     const grades = [1,2,3,4,5]; const classes = ['A','B','C','D','E'];
                     grades.forEach(g => classes.forEach(c => document.write(`<option value="${g}${c}">${g}${c} 班</option>`)));
                 </script>
             </select>
+
+            <div style="display: flex; gap: 10px; margin-bottom: 20px; align-items: center; flex-wrap: wrap;">
+                <button class="btn-back" style="background: #f1f5f9;" onclick="sortEditor('classNo')">🔢 按學號重新排序</button>
+                <button class="btn-back" style="background: #f1f5f9;" onclick="sortEditor('time')">🕒 按面見時間重新排序</button>
+            </div>
+
+            <!-- 自動安排時間面板 -->
+            <div class="auto-schedule-box">
+                <strong style="color: #0f172a; width: 100%;">🤖 自動排程工具：</strong>
+                <label>首位時間: <input type="time" id="auto-start-time" value="09:00" class="auto-input" style="width: 110px;"></label>
+                <label>每 <input type="number" id="auto-duration" value="10" class="auto-input"> 分鐘一位</label>
+                <label>每面見 <input type="number" id="auto-buffer-count" value="5" class="auto-input"> 位後，</label>
+                <label>加入 <input type="number" id="auto-buffer-time" value="15" class="auto-input"> 分鐘小休</label>
+                <button class="btn-primary" style="padding: 10px 20px; border-radius: 10px; width: auto; font-size: 1em;" onclick="applyAutoSchedule()">⚡ 執行自動排程</button>
+            </div>
+
             <div id="editor-table-container"></div>
+            
             <div style="margin-top: 25px; display: flex; gap: 15px; flex-wrap: wrap;">
                 <button class="btn-primary" style="background: #10b981; width: auto; flex-grow: 1;" onclick="addNewStudentRow()">➕ 在表格最底新增一列</button>
                 <button class="btn-primary" style="background: #0f172a; width: auto; flex-grow: 2;" onclick="saveClassData()">💾 儲存此班名單至雲端</button>
@@ -815,6 +941,7 @@
         </div>
     </div>
 
+    <!-- 意見回饋輸入視窗 -->
     <div id="feedback-modal" class="modal-overlay">
         <div class="modal-content">
             <h3>📝 紀錄/編輯家長意見</h3>
