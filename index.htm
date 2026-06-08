@@ -254,7 +254,6 @@
                 const stillValid = registered.find(s => s.classNo === room.lockedNextClassNo);
                 if (stillValid) return; 
             }
-            // 不要改變原本陣列，複製出來排序找最前的時間
             const tempSorted = [...registered].sort((a, b) => a.time.localeCompare(b.time));
             room.lockedNextClassNo = tempSorted[0].classNo;
         }
@@ -285,31 +284,49 @@
 
         window.switchFloor = function(floorName) { currentFloor = floorName; renderAll(); }
 
+        // 等候室操作面見狀態的核心邏輯
         window.advanceStudentState = function(className, classNo) {
             let room = systemData[className] || { status: 'free', schedule: [] };
             let student = room.schedule.find(s => s.classNo === classNo);
 
-            if (student.state === 'registered' && room.status === 'break') {
-                alert("老師正在小休，暫時不能安排面見！\n請等待老師狀態改為「空閒中」。");
+            // 若由 Pending 轉為 Registered (永遠容許)
+            if (student.state === 'pending') { 
+                saveSnapshot(room);
+                student.state = 'registered'; 
+                updateLockedNextStudent(room);
+                updateFirebase(className, room);
+                return;
+            } 
+            
+            // 若安排已登記的家長入內面見
+            if (student.state === 'registered') {
+                // 防護 1: 老師正在小休
+                if (room.status === 'break') {
+                    alert("老師正在小休，暫時不能安排面見！\n請等待老師狀態改為「空閒中」。");
+                    return;
+                }
+                // 防護 2: 課室正在面見中
+                if (room.status === 'busy') {
+                    alert("課室正在面見中！\n等候室不能安排下一位家長，請等待老師結束當前面見轉為「空閒中」。");
+                    return;
+                }
+
+                saveSnapshot(room);
+                student.state = 'interviewing';
+                room.status = 'busy'; 
+                room.startTime = Date.now();
+                room.currentStudent = { name: student.name, classNo: student.classNo };
+                
+                updateLockedNextStudent(room);
+                updateFirebase(className, room);
+                return;
+            } 
+            
+            // 防護 3: 等候室試圖結束面見
+            if (student.state === 'interviewing') {
+                alert("等候室不能結束面見！\n必須由老師於「班主任面見面版」點擊結束。");
                 return;
             }
-
-            saveSnapshot(room);
-
-            if (student.state === 'pending') { student.state = 'registered'; } 
-            else if (student.state === 'registered') {
-                let current = room.schedule.find(s => s.state === 'interviewing');
-                if (current) current.state = 'finished';
-                student.state = 'interviewing';
-                room.status = 'busy'; room.startTime = Date.now();
-                room.currentStudent = { name: student.name, classNo: student.classNo };
-            } 
-            else if (student.state === 'interviewing') {
-                student.state = 'finished'; room.status = 'free'; room.startTime = null; room.currentStudent = null;
-            }
-            
-            updateLockedNextStudent(room);
-            updateFirebase(className, room);
         }
 
         window.undoLastAction = function(className) {
@@ -443,7 +460,6 @@
             let room = systemData[editClass] || { schedule: [] };
             let schedule = room.schedule || [];
             
-            // 取消預設排序，尊重原陣列順序
             let html = `
                 <table class="editor-table">
                     <thead><tr><th style="width:40px;">順序</th><th style="width:15%;">學號</th><th style="width:30%;">學生姓名</th><th style="width:25%;">預約時間</th><th style="width:20%;">操作</th></tr></thead>
@@ -454,7 +470,7 @@
             html += `</tbody></table>`;
             container.innerHTML = html;
             
-            initDragAndDrop(); // 綁定拖曳事件
+            initDragAndDrop(); 
         }
 
         function generateRowHTML(no, name, time, state) {
@@ -475,7 +491,6 @@
             if(tbody) tbody.insertAdjacentHTML('beforeend', generateRowHTML("", "", "09:00", "pending"));
         }
 
-        // 按鈕排序功能
         window.sortEditor = function(type) {
             const tbody = document.getElementById('schedule-tbody');
             if(!tbody) return;
@@ -491,11 +506,9 @@
                     return valA.localeCompare(valB);
                 }
             });
-            // 重新插入DOM以改變排序
             rows.forEach(row => tbody.appendChild(row));
         }
 
-        // 自動安排面見時間計算
         window.applyAutoSchedule = function() {
             const startTime = document.getElementById('auto-start-time').value; 
             const duration = parseInt(document.getElementById('auto-duration').value) || 10;
@@ -511,24 +524,20 @@
             let studentCount = 0;
 
             rows.forEach((row, index) => {
-                // 如果已達到緩衝人數 (且不是第一位)，加上緩衝時間
                 if (studentCount > 0 && studentCount % bufferCount === 0) {
                     currentTime.setMinutes(currentTime.getMinutes() + bufferTime);
                 }
 
-                // 寫入時間
                 let h = String(currentTime.getHours()).padStart(2, '0');
                 let m = String(currentTime.getMinutes()).padStart(2, '0');
                 row.querySelector('.input-time').value = `${h}:${m}`;
 
-                // 遞增下一位的時間
                 currentTime.setMinutes(currentTime.getMinutes() + duration);
                 studentCount++;
             });
             alert("✅ 自動排程已套用至畫面上，請檢查確認後，點擊最下方「儲存此班名單至雲端」。");
         }
 
-        // Drag and drop implementation
         function initDragAndDrop() {
             const tbody = document.getElementById('schedule-tbody');
             if (!tbody) return;
@@ -564,7 +573,6 @@
             }, { offset: Number.NEGATIVE_INFINITY }).element;
         }
 
-        // 儲存名單
         window.saveClassData = async function() {
             const editClass = document.getElementById('edit-class-select').value;
             const rows = document.getElementById('schedule-tbody').querySelectorAll('tr');
@@ -574,7 +582,6 @@
                 const name = row.querySelector('.input-name').value.trim();
                 const time = row.querySelector('.input-time').value.trim();
                 const state = row.querySelector('.input-state').value;
-                // 保存目前 DOM 的實體順序
                 if (no !== "" && name !== "") newSchedule.push({ classNo: no, name: name, time: time || "09:00", state: state });
             });
             let currentRoomData = systemData[editClass] || { status: 'free', startTime: null, currentStudent: null, lockedNextClassNo: null };
@@ -622,7 +629,6 @@
             const grid = document.getElementById('admin-grid');
             if (!grid) return; 
 
-            // 紀錄目前的捲動位置 (防止刷新時彈回最頂)
             const scrollPositions = {};
             grid.querySelectorAll('.student-list').forEach(list => {
                 const cls = list.getAttribute('data-class');
@@ -636,7 +642,6 @@
                 const card = document.createElement('div');
                 card.className = 'admin-card';
 
-                // 按照陣列原始順序顯示
                 let scheduleHTML = `<div class="student-list" data-class="${className}">`;
                 if (!room.schedule || room.schedule.length === 0) { 
                     scheduleHTML += `<div style="text-align:center; padding: 20px; color: #94a3b8;">此班尚未建立名單</div>`; 
@@ -661,7 +666,6 @@
                 grid.appendChild(card);
             });
 
-            // 恢復捲動位置
             grid.querySelectorAll('.student-list').forEach(list => {
                 const cls = list.getAttribute('data-class');
                 if (cls && scrollPositions[cls] !== undefined) {
@@ -764,7 +768,6 @@
             const container = document.getElementById('teacher-readonly-list');
             if (!container) return;
 
-            // 維持原陣列順序顯示
             let html = `<h3 style="margin-top:0; color:#1e293b; text-align:center; border-bottom: 2px solid #f1f5f9; padding-bottom:10px;">📋 本班登記及面見狀況</h3><div class="student-list" style="margin:0; height: 100%; max-height: 500px; overflow-y: auto;">`;
             
             if (!room.schedule || room.schedule.length === 0) {
