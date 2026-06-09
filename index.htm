@@ -80,15 +80,40 @@
         .s-finished { background-color: #f0fdf4; border-color: #bbf7d0; color: #166534; opacity: 0.6; text-decoration: line-through; }
         .s-finished::after { content: '✔️ 完成'; font-size: 0.85em; text-decoration: none; display: inline-block; }
 
-        /* 更新：取消「已鎖定」字眼 */
         .is-next-inline { border: 2px solid #3b82f6 !important; background-color: #eff6ff; position: relative; }
         .is-next-inline::before { content: '🔜 下一位'; position: absolute; left: -10px; top: -12px; background: #3b82f6; color: white; font-size: 0.75em; padding: 4px 10px; border-radius: 10px; box-shadow: var(--shadow-sm); }
+
+        /* 支援警報設計 */
+        @keyframes severe-alert {
+            0% { background-color: #fff; box-shadow: 0 0 5px rgba(239, 68, 68, 0.2); }
+            100% { background-color: #fef2f2; box-shadow: 0 0 25px rgba(239, 68, 68, 0.8); border-color: #ef4444; }
+        }
+        @keyframes pulse-opacity {
+            0% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0.8; transform: scale(1.05); }
+        }
+        @keyframes flash-border {
+            0% { border-color: #ef4444; box-shadow: 0 0 10px rgba(239,68,68,0.5); }
+            100% { border-color: #b91c1c; box-shadow: 0 0 30px rgba(239,68,68,1); }
+        }
+
+        .support-alert {
+            animation: severe-alert 0.6s infinite alternate !important;
+            border: 3px solid #ef4444 !important;
+        }
+        .support-badge {
+            background-color: #dc2626; color: white; padding: 6px 16px; 
+            border-radius: 20px; font-weight: 900; font-size: 1.1em; 
+            animation: pulse-opacity 0.6s infinite alternate; display: inline-block;
+            border: 2px solid #b91c1c; box-shadow: 0 4px 6px rgba(220, 38, 38, 0.4);
+            letter-spacing: 1px;
+        }
 
         /* 等候室資訊面板 */
         .waiting-info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; }
         @media (max-width: 1000px) { .waiting-info-grid { grid-template-columns: repeat(2, 1fr); } }
         @media (max-width: 650px) { .waiting-info-grid { grid-template-columns: 1fr; } }
-        .info-card { background: #fff; border-radius: 24px; padding: 25px; box-shadow: var(--shadow-md); border-top: 8px solid #cbd5e1; text-align: center; }
+        .info-card { background: #fff; border-radius: 24px; padding: 25px; box-shadow: var(--shadow-md); border-top: 8px solid #cbd5e1; text-align: center; transition: all 0.3s;}
         .info-card.busy { border-top-color: #ef4444; }
         .info-card.free { border-top-color: #10b981; }
         .info-card.break { border-top-color: #f59e0b; }
@@ -98,7 +123,25 @@
         .i-next-title { font-size: 1em; color: #3b82f6; font-weight: bold; margin-bottom: 5px; }
         .i-next-name { font-size: 1.8em; font-weight: 800; color: #1e3a8a; }
 
-        /* 班主任面版：靈活的 Flexbox 雙欄佈局 */
+        /* 大螢幕專屬：當只有一班時置中及放大 */
+        .waiting-info-grid.single-layout {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .waiting-info-grid.single-layout .info-card {
+            width: 100%;
+            max-width: 750px;
+            padding: 40px;
+        }
+        .waiting-info-grid.single-layout .i-class { font-size: 3.5em; }
+        .waiting-info-grid.single-layout .i-current { font-size: 1.8em; margin-bottom: 25px; }
+        .waiting-info-grid.single-layout .i-next-box { padding: 25px; margin-top: 30px; }
+        .waiting-info-grid.single-layout .i-next-title { font-size: 1.2em; }
+        .waiting-info-grid.single-layout .i-next-name { font-size: 2.5em; }
+
+        /* 班主任面版佈局 */
         .teacher-setup { background: #fff; max-width: 500px; margin: 40px auto; padding: 40px; border-radius: 24px; box-shadow: var(--shadow-lg); text-align: center; }
         .teacher-setup select { width: 100%; padding: 16px; margin-bottom: 25px; font-size: 1.3em; border-radius: 16px; border: 2px solid #cbd5e1; }
         .btn-primary { background: #0f172a; color: white; width: 100%; padding: 18px; font-size: 1.3em; font-weight: bold; border-radius: 16px; border: none; cursor: pointer; }
@@ -127,9 +170,9 @@
         .teacher-card.busy { background: var(--card-busy-grad); }
         .teacher-card.break { background: var(--card-break-grad); }
         
-        .t-class-name { font-size: 4.5em; font-weight: 900; margin: 0; text-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-        .t-timer { font-size: 3.5em; font-weight: bold; font-family: monospace; text-shadow: 0 2px 5px rgba(0,0,0,0.2); margin: 10px 0;}
-        .t-student-info { font-size: 1.6em; font-weight: 800; background: #fff; color: #dc2626; padding: 10px 25px; border-radius: 20px; margin-top: 5px; box-shadow: var(--shadow-sm); text-align: center; }
+        .t-class-name { font-size: 4.5em; font-weight: 900; margin: 0; text-shadow: 0 4px 10px rgba(0,0,0,0.2); position: relative; z-index: 5;}
+        .t-timer { font-size: 3.5em; font-weight: bold; font-family: monospace; text-shadow: 0 2px 5px rgba(0,0,0,0.2); margin: 10px 0; position: relative; z-index: 5;}
+        .t-student-info { font-size: 1.6em; font-weight: 800; background: #fff; color: #dc2626; padding: 10px 25px; border-radius: 20px; margin-top: 5px; box-shadow: var(--shadow-sm); text-align: center; position: relative; z-index: 5;}
         
         .teacher-actions-container {
             background: #fff; padding: 20px; border-radius: 24px; box-shadow: var(--shadow-md); 
@@ -140,6 +183,8 @@
         .btn-t-main { background: #fee2e2; color: #991b1b; border: 2px solid #fca5a5; }
         .btn-t-break { background: #fef08a; color: #854d0e; border: 2px solid #fde047; }
         .btn-t-feedback { background: #e0f2fe; color: #0369a1; border: 2px solid #bae6fd; }
+        .btn-t-support { background: #ef4444; color: #fff; border: 2px solid #b91c1c; }
+        .btn-t-support-active { background: #10b981; color: #fff; border: 2px solid #059669; }
         
         .teacher-readonly-list {
             background: #fff; border-radius: 24px; padding: 20px; box-shadow: var(--shadow-md); 
@@ -162,6 +207,7 @@
         .editor-table td { padding: 8px; border-bottom: 1px solid #e2e8f0; background: #fff;}
         .editor-table input { padding: 12px; border-radius: 10px; border: 2px solid #cbd5e1; font-size: 1.1em; width: 100%; box-sizing: border-box; }
         
+        /* 拖曳樣式 */
         .editor-table tr { transition: background 0.2s; }
         .editor-table tr.dragging { opacity: 0.5; background: #e2e8f0 !important; box-shadow: inset 0 0 10px rgba(0,0,0,0.1); }
         .drag-handle { cursor: grab; text-align: center; color: #94a3b8; font-size: 1.8em; user-select: none; width: 40px; }
@@ -180,7 +226,7 @@
         .btn-fb-edit { background: #e0f2fe; color: #0369a1; border: none; padding: 6px 16px; border-radius: 10px; font-weight: bold; cursor: pointer; }
         .btn-fb-delete { background: #fee2e2; color: #b11c1c; border: none; padding: 6px 16px; border-radius: 10px; font-weight: bold; cursor: pointer; }
 
-        /* Modal 優化版 */
+        /* Modal */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
         .modal-overlay.active { display: flex; animation: fadeIn 0.2s; }
         .modal-content { background: #fff; padding: 30px; border-radius: 24px; width: 90%; max-width: 500px; box-shadow: var(--shadow-lg); text-align: left; }
@@ -189,7 +235,6 @@
         .modal-btns { display: flex; justify-content: flex-end; gap: 10px; }
     </style>
 
-    <!-- 載入 Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, setDoc, updateDoc, deleteDoc, collection, onSnapshot, addDoc, serverTimestamp, writeBatch, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -211,7 +256,7 @@
         let currentFloor = '一樓 XSpace'; 
         let myClass = null; 
         let editingFeedbackId = null; 
-        let editingFeedbackClass = null; // 用於儲存當前正在編輯意見的班級
+        let editingFeedbackClass = null; 
         
         const floorMap = {
             '一樓 XSpace': ['1A', '1B', '1C', '1D', '1E', '2A'],
@@ -227,7 +272,7 @@
             renderAll();
         });
 
-        const qFeedback = query(collection(db, "feedbacks"), orderBy("timestamp", "desc"));
+        const qFeedback = query(collection(db, "feedbacks")); 
         onSnapshot(qFeedback, (snapshot) => {
             feedbackData = [];
             snapshot.docs.forEach(doc => { feedbackData.push({ id: doc.id, ...doc.data() }); });
@@ -368,22 +413,25 @@
             updateFirebase(myClass, room);
         }
 
-        // =======================
-        // 意見 Modal 邏輯 (全新下拉選單設計)
-        // =======================
+        // 要求支援功能
+        window.toggleSupportRequest = function() {
+            if (!myClass) return;
+            let room = systemData[myClass] || { status: 'free', schedule: [], needsSupport: false };
+            updateFirebase(myClass, { needsSupport: !room.needsSupport });
+        }
+
+        // 意見 Modal 邏輯
         window.openFeedbackModal = function() {
             if (!myClass || !systemData[myClass]) return;
             editingFeedbackClass = myClass;
             let room = systemData[myClass];
             
-            // 決定預設學生 (正在面見 或 最後完成)
             let defaultStudent = room.currentStudent; 
             if(!defaultStudent) {
                 let finished = (room.schedule || []).filter(s => s.state === 'finished');
                 if(finished.length > 0) defaultStudent = finished[finished.length - 1];
             }
 
-            // 建立選項
             let selectHtml = `<option value="N/A" data-name="N/A">一般班級備註 (目前無特定對象)</option>`;
             let sortedSchedule = [...(room.schedule || [])].sort((a,b) => parseInt(a.classNo || 0) - parseInt(b.classNo || 0));
             
@@ -468,7 +516,7 @@
                 let newSchedule = (room.schedule || []).map(s => ({...s, state: 'pending'}));
                 const ref = doc(db, 'classes', className);
                 batch.set(ref, {
-                    status: 'free', startTime: null, currentStudent: null, lockedNextClassNo: null, historySnapshot: null, schedule: newSchedule
+                    status: 'free', startTime: null, currentStudent: null, lockedNextClassNo: null, historySnapshot: null, schedule: newSchedule, needsSupport: false
                 }, { merge: true });
             });
             try { await batch.commit(); alert('✅ 面見進度重置成功！'); } 
@@ -476,7 +524,7 @@
         }
 
         // =======================
-        // 動態表格編輯器 (排序、拖曳、自動安排時間)
+        // 動態表格編輯器
         // =======================
         window.loadScheduleEditor = function() {
             const editClass = document.getElementById('edit-class-select').value;
@@ -608,7 +656,7 @@
                 const state = row.querySelector('.input-state').value;
                 if (no !== "" && name !== "") newSchedule.push({ classNo: no, name: name, time: time || "09:00", state: state });
             });
-            let currentRoomData = systemData[editClass] || { status: 'free', startTime: null, currentStudent: null, lockedNextClassNo: null };
+            let currentRoomData = systemData[editClass] || { status: 'free', startTime: null, currentStudent: null, lockedNextClassNo: null, needsSupport: false };
             currentRoomData.schedule = newSchedule;
             try { await updateFirebase(editClass, currentRoomData); alert(`✅ ${editClass} 班名單及順序儲存成功！`); } 
             catch(e) { alert("儲存失敗！"); }
@@ -622,6 +670,11 @@
             renderFloorTabs('floor-tabs-container'); renderFloorTabs('floor-tabs-container-info');
             renderAdminGrid(); renderInfoGrid(); renderMasterGrid();
             if (myClass) renderSingleTeacherPanel();
+            
+            if (document.getElementById('view-feedback-list').classList.contains('active')) {
+                renderFeedbackList();
+            }
+            
             updateTimersUI(); 
         }
 
@@ -639,7 +692,7 @@
         }
 
         function getStatusText(status) {
-            if(status === 'busy') return '🔴 面見中';
+            if(status === 'busy') return '🔴 正在面見';
             if(status === 'break') return '🟡 小休中';
             return '🟢 空閒中';
         }
@@ -661,10 +714,10 @@
 
             grid.innerHTML = '';
             floorMap[currentFloor].forEach((className) => {
-                const room = systemData[className] || { status: 'free', schedule: [] };
+                const room = systemData[className] || { status: 'free', schedule: [], needsSupport: false };
                 const lockedNext = getLockedNextStudentObj(room);
                 const card = document.createElement('div');
-                card.className = 'admin-card';
+                card.className = `admin-card ${room.needsSupport ? 'support-alert' : ''}`;
 
                 let scheduleHTML = `<div class="student-list" data-class="${className}">`;
                 if (!room.schedule || room.schedule.length === 0) { 
@@ -678,12 +731,15 @@
                     });
                 }
                 scheduleHTML += `</div>`;
+                
+                let supportBadge = room.needsSupport ? `<div class="support-badge">🚨 請求支援 🚨</div>` : '';
 
                 card.innerHTML = `
-                    <div class="a-header">
-                        <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="a-header" style="${room.needsSupport ? 'background-color: #fee2e2; border-radius: 12px; padding: 10px; border: 2px solid #ef4444;' : ''}">
+                        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                             <div class="a-class-name">${className}</div>
                             <div class="status-pill ${getStatusPillClass(room.status)}">${getStatusText(room.status)}</div>
+                            ${supportBadge}
                         </div>
                         <button class="btn-undo" onclick="undoLastAction('${className}')" ${!room.historySnapshot ? 'disabled' : ''}>↩️ 復原</button>
                     </div>${scheduleHTML}`;
@@ -701,15 +757,22 @@
         function renderInfoGrid() {
             const grid = document.getElementById('info-grid');
             if (!grid) return; grid.innerHTML = '';
-            floorMap[currentFloor].forEach((className) => {
+            
+            const currentClasses = floorMap[currentFloor];
+            if (currentClasses.length === 1) {
+                grid.classList.add('single-layout');
+            } else {
+                grid.classList.remove('single-layout');
+            }
+
+            currentClasses.forEach((className) => {
                 const room = systemData[className] || { status: 'free', schedule: [] };
                 const lockedNext = getLockedNextStudentObj(room);
                 const currentName = room.currentStudent ? `${room.currentStudent.classNo}號 ${room.currentStudent.name}` : '無';
                 
-                // 等候室大螢幕：取消預約面見時間顯示，只保留學號與姓名
                 const nextName = lockedNext ? `${lockedNext.classNo}號 ${lockedNext.name}` : '目前無人等候';
                 
-                let curStatusHtml = room.status === 'break' ? '🟡 老師稍事休息，請稍候' : (room.status === 'free' ? '🟢 目前空閒，準備叫號' : `🔴 面見中：<strong>${currentName}</strong>`);
+                let curStatusHtml = room.status === 'break' ? '🟡 老師稍事休息，請稍候' : (room.status === 'free' ? '🟢 目前空閒，準備叫號' : `🔴 正在面見：<strong>${currentName}</strong>`);
                 const card = document.createElement('div'); card.className = `info-card ${room.status}`;
                 card.innerHTML = `<div class="i-class">${className} 班</div><div class="i-current">${curStatusHtml}</div>
                     <div class="i-next-box"><div class="i-next-title">🔜 下位面見家長</div><div class="i-next-name">${nextName}</div></div>`;
@@ -721,15 +784,21 @@
             const grid = document.getElementById('master-grid');
             if (!grid) return; grid.innerHTML = '';
             classList.forEach((className) => {
-                const room = systemData[className] || { status: 'free', schedule: [] };
+                const room = systemData[className] || { status: 'free', schedule: [], needsSupport: false };
                 const waitingCount = (room.schedule || []).filter(s => s.state === 'registered').length;
                 
-                const card = document.createElement('div'); card.className = 'admin-card';
+                const card = document.createElement('div'); 
+                card.className = `admin-card ${room.needsSupport ? 'support-alert' : ''}`;
                 card.style.borderTop = `6px solid ${room.status === 'busy' ? '#ef4444' : (room.status === 'break' ? '#f59e0b' : '#10b981')}`;
-                card.innerHTML = `<div style="font-size:1.8em; font-weight:bold;">${className}</div>
-                    <div style="font-size: 1.1em; color: #475569; margin-top: 5px;">等候人數: <strong style="color: #f59e0b; font-size: 1.3em;">${waitingCount}</strong></div>
-                    <div class="timer-display" data-class="${className}" style="font-size:2em; font-weight:bold; font-family:monospace; margin:10px 0; color: #333">00:00</div>
-                    <div style="font-size:1em; color:#475569; font-weight:bold;">${getStatusText(room.status)}</div>`;
+                
+                let supportBadge = room.needsSupport ? `<div class="support-badge" style="margin-top: 10px; width: 100%; box-sizing: border-box; text-align: center;">🚨 請求支援 🚨</div>` : '';
+
+                card.innerHTML = `
+                    <div style="font-size:2.2em; font-weight:900; color: ${room.needsSupport ? '#dc2626' : '#1e293b'};">${className}</div>
+                    ${supportBadge}
+                    <div style="font-size: 1.1em; color: #475569; margin-top: 15px;">等候人數: <strong style="color: #f59e0b; font-size: 1.4em;">${waitingCount}</strong></div>
+                    <div class="timer-display" data-class="${className}" style="font-size:2.5em; font-weight:bold; font-family:monospace; margin:10px 0; color: ${room.needsSupport ? '#dc2626' : '#333'}">00:00</div>
+                    <div style="font-size:1.1em; color:#475569; font-weight:bold;">${getStatusText(room.status)}</div>`;
                 grid.appendChild(card);
             });
         }
@@ -737,7 +806,7 @@
         // === 班主任面板 (左右佈局 + 右側檢視清單) ===
         function renderSingleTeacherPanel() {
             if (!myClass) return;
-            const room = systemData[myClass] || { status: 'free', schedule: [] };
+            const room = systemData[myClass] || { status: 'free', schedule: [], needsSupport: false };
             const lockedNext = getLockedNextStudentObj(room);
             const card = document.getElementById('single-teacher-card');
             const extraControls = document.getElementById('teacher-extra-controls');
@@ -749,23 +818,33 @@
                 studentInfoHTML = `<div class="t-student-info" style="color:#854d0e; background: #fef3c7;">☕ 小休狀態中</div>`;
             }
 
-            // 班主任面板：取消「已鎖定」字眼
             let nextInfo = lockedNext ? `🔜 下一位：${lockedNext.time} (${lockedNext.classNo}號 ${lockedNext.name})` : `目前無人登記等候`;
             
             let centerText = '';
             if (room.status === 'free') centerText = '🟢 空閒中 (等待登記處安排入內)';
-            else if (room.status === 'busy') centerText = '🔴 面見中 (請在下方按結束)';
+            else if (room.status === 'busy') centerText = '🔴 正在面見 (請在下方按結束)';
             else if (room.status === 'break') centerText = '🟡 小休中 (請點擊下方結束小休)';
+
+            let supportOverlay = '';
+            if (room.needsSupport) {
+                supportOverlay = `
+                    <div style="position: absolute; top: -8px; left: -8px; right: -8px; bottom: -8px; border: 8px solid #ef4444; border-radius: 44px; animation: flash-border 0.8s infinite alternate; pointer-events: none; z-index: 10;"></div>
+                    <div style="background: #ef4444; color: white; padding: 12px 30px; border-radius: 30px; font-size: 1.6em; font-weight: 900; position: absolute; top: -25px; animation: pulse-opacity 0.8s infinite alternate; box-shadow: 0 8px 20px rgba(239,68,68,0.6); z-index: 11; letter-spacing: 2px;">
+                        🚨 已發出支援請求 🚨
+                    </div>
+                `;
+            }
 
             card.className = `teacher-card ${room.status}`;
             card.innerHTML = `
-                <div style="font-size: 1.3em; font-weight: bold; background: rgba(0,0,0,0.15); padding: 8px 16px; border-radius: 15px; margin-bottom: 20px;">
+                ${supportOverlay}
+                <div style="font-size: 1.3em; font-weight: bold; background: rgba(0,0,0,0.15); padding: 8px 16px; border-radius: 15px; margin-bottom: 20px; position:relative; z-index:5;">
                     ${nextInfo}
                 </div>
-                <div class="t-class-name">${myClass}</div>
-                <div class="t-timer timer-display" data-class="${myClass}">00:00</div>
+                <div class="t-class-name" style="position:relative; z-index:5;">${myClass}</div>
+                <div class="t-timer timer-display" data-class="${myClass}" style="position:relative; z-index:5;">00:00</div>
                 ${studentInfoHTML}
-                <div style="font-size: 1.2em; font-weight: 700; margin-top: 15px; background: rgba(255,255,255,0.25); padding: 8px 20px; border-radius: 50px;">
+                <div style="font-size: 1.2em; font-weight: 700; margin-top: 15px; background: rgba(255,255,255,0.25); padding: 8px 20px; border-radius: 50px; position:relative; z-index:5;">
                     ${centerText}
                 </div>
             `;
@@ -787,7 +866,15 @@
                     <button class="btn-t-action btn-t-feedback" onclick="openFeedbackModal()">📝 補填意見</button>
                 `;
             }
-            extraControls.innerHTML = actionsHtml;
+            
+            let supportBtnText = room.needsSupport ? '✅ 支援已抵達 (點擊取消警報)' : '🆘 要求緊急支援';
+            let supportBtnClass = room.needsSupport ? 'btn-t-support-active' : 'btn-t-support';
+
+            extraControls.innerHTML = `
+                ${actionsHtml}
+                <hr style="border: 0; border-top: 2px dashed #e2e8f0; width: 100%; margin: 5px 0;">
+                <button class="btn-t-action ${supportBtnClass}" onclick="toggleSupportRequest()">${supportBtnText}</button>
+            `;
 
             renderTeacherReadonlyList(room);
         }
@@ -816,7 +903,7 @@
         }
 
         // =======================
-        // 查閱家長意見列表
+        // 查閱家長意見列表 (自動按班別學號排序)
         // =======================
         window.renderFeedbackList = function() {
             const container = document.getElementById('feedback-container');
@@ -824,14 +911,29 @@
             container.innerHTML = '';
 
             if(feedbackData.length === 0) {
-                container.innerHTML = `<p style="color:#64748b; font-size:1.2em; grid-column: 1/-1;">目前系統中尚無任何家長意見紀錄。</p>`;
+                container.innerHTML = `<p style="color:#64748b; font-size:1.2em; grid-column: 1/-1;">目前系統中尚無符合條件的家長意見紀錄。</p>`;
                 return;
             }
 
-            feedbackData.forEach(fb => {
+            let sortedFeedback = [...feedbackData].sort((a, b) => {
+                const classA = a.className || "";
+                const classB = b.className || "";
+                if (classA !== classB) {
+                    return classA.localeCompare(classB); 
+                }
+                const noA = parseInt(a.classNo) || 999;
+                const noB = parseInt(b.classNo) || 999;
+                if (noA !== noB) {
+                    return noA - noB; 
+                }
+                const timeA = a.timestamp ? a.timestamp.toMillis() : 0;
+                const timeB = b.timestamp ? b.timestamp.toMillis() : 0;
+                return timeB - timeA; 
+            });
+
+            sortedFeedback.forEach(fb => {
                 const dateObj = fb.timestamp ? fb.timestamp.toDate() : new Date();
                 const timeString = dateObj.toLocaleString('zh-HK', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-                // 防止特殊字元破壞字串
                 const safeContent = fb.content.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/'/g, "\\'").replace(/\n/g, '\\n');
 
                 const html = `
@@ -881,7 +983,6 @@
         <button id="btn-tab-setup" class="nav-btn" style="border-color:#10b981; color:#059669;" onclick="switchView('setup')">📝 班級名單與時間</button>
     </div>
 
-    <!-- 視圖一：大堂登記處 -->
     <div id="view-admin" class="view-section active">
         <div class="floor-tabs" id="floor-tabs-container"></div>
         <div id="admin-grid"></div>
@@ -892,13 +993,11 @@
         </div>
     </div>
 
-    <!-- 視圖二：等候室資訊 -->
     <div id="view-info" class="view-section">
         <div class="floor-tabs" id="floor-tabs-container-info"></div>
         <div class="waiting-info-grid" id="info-grid"></div>
     </div>
 
-    <!-- 視圖三：班主任面見面版 -->
     <div id="view-teacher" class="view-section">
         <div id="teacher-setup" class="teacher-setup">
             <h2>進入班主任操作面版</h2>
@@ -921,22 +1020,19 @@
         </div>
     </div>
 
-    <!-- 視圖四：系統總覽 -->
     <div id="view-master" class="view-section">
         <div class="grid-container" id="master-grid" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));"></div>
     </div>
     
-    <!-- 視圖五：查閱家長意見 -->
     <div id="view-feedback-list" class="view-section">
         <div class="setup-card" style="background: transparent; box-shadow: none; padding: 0;">
             <h2 style="margin-top:0; color: #0f172a;">📖 家長意見紀錄總覽</h2>
-            <p style="color: #64748b; font-size: 1.1em; margin-bottom: 25px;">此處即時顯示全校老師輸入的家長面見備註（最新鮮的紀錄在最前）。</p>
+            <p style="color: #64748b; font-size: 1.1em; margin-bottom: 25px;">此處即時顯示全校老師輸入的家長面見備註（已自動依班別與學號排序）。</p>
             <div id="feedback-container" class="grid-container" style="grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));">
             </div>
         </div>
     </div>
 
-    <!-- 視圖六：名單與時間編排 -->
     <div id="view-setup" class="view-section">
         <div class="setup-card">
             <h2 style="margin-top:0;">📝 班級名單與面見時間編輯器</h2>
@@ -944,8 +1040,8 @@
             
             <select id="edit-class-select" style="padding:10px 15px; font-size:1.2em; border-radius:12px; border: 2px solid #cbd5e1; margin-bottom: 15px; width: 100%; max-width: 300px;" onchange="loadScheduleEditor()">
                 <script>
-                    const grades = [1,2,3,4,5]; const classes = ['A','B','C','D','E'];
-                    grades.forEach(g => classes.forEach(c => document.write(`<option value="${g}${c}">${g}${c} 班</option>`)));
+                    const grades2 = [1,2,3,4,5]; const classes2 = ['A','B','C','D','E'];
+                    grades2.forEach(g => classes2.forEach(c => document.write(`<option value="${g}${c}">${g}${c} 班</option>`)));
                 </script>
             </select>
 
@@ -954,7 +1050,6 @@
                 <button class="btn-back" style="background: #f1f5f9;" onclick="sortEditor('time')">🕒 按面見時間重新排序</button>
             </div>
 
-            <!-- 自動安排時間面板 -->
             <div class="auto-schedule-box">
                 <strong style="color: #0f172a; width: 100%;">🤖 自動排程工具：</strong>
                 <label>首位時間: <input type="time" id="auto-start-time" value="09:00" class="auto-input" style="width: 110px;"></label>
@@ -973,12 +1068,11 @@
         </div>
     </div>
 
-    <!-- 意見回饋輸入視窗 -->
     <div id="feedback-modal" class="modal-overlay">
         <div class="modal-content">
             <h3>📝 紀錄/編輯家長意見</h3>
             <div style="margin-bottom: 15px; text-align: left;">
-                <label style="color: #64748b; font-weight:bold; display:block; margin-bottom:8px;">關聯學生 (預設為當前/最後面見)：</label>
+                <label style="color: #64748b; font-weight:bold; display:block; margin-bottom:8px;">關聯學生 (下拉可變更)：</label>
                 <select id="feedback-student-select" style="width: 100%; padding: 12px; border-radius: 10px; border: 2px solid #cbd5e1; font-size: 1.1em; outline: none;"></select>
             </div>
             <textarea id="feedback-text" placeholder="請輸入對這位家長的觀察、討論重點或後續跟進事項..."></textarea>
