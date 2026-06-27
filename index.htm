@@ -550,6 +550,35 @@
             }
         }
 
+        // 全校名單強制以時間排序
+        window.sortAllByTime = async function() {
+            if (!confirm('確定要將全校所有班別的名單，強制以「面見時間」重新排序嗎？')) return;
+            
+            const batch = writeBatch(db);
+            classList.forEach(className => {
+                let room = systemData[className];
+                // 只有當該班有名單時才進行排序
+                if (room && room.schedule && room.schedule.length > 0) {
+                    let sortedSchedule = [...room.schedule].sort((a, b) => {
+                        let timeA = a.time || "";
+                        let timeB = b.time || "";
+                        return timeA.localeCompare(timeB);
+                    });
+                    const ref = doc(db, 'classes', className);
+                    // 將排序後的新名單寫入批次更新中
+                    batch.set(ref, { schedule: sortedSchedule }, { merge: true });
+                }
+            });
+            
+            try { 
+                await batch.commit(); 
+                alert('✅ 全校班別已成功以「面見時間」排序！'); 
+            } 
+            catch (e) { 
+                alert('排序失敗，請檢查網絡連線。'); 
+            }
+        }
+
         window.resetDayStatus = async function() {
             const pwd = prompt("請輸入管理員密碼以進行安全重設：");
             if (pwd !== "ltmps") { alert("密碼錯誤，拒絕重設。"); return; }
@@ -1130,7 +1159,10 @@
     <div id="view-admin" class="view-section active">
         <div class="floor-tabs" id="floor-tabs-container"></div>
         <div id="admin-grid"></div>
-        <div style="text-align: center; margin-top: 40px;">
+        <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-top: 40px;">
+            <button class="btn-back" style="border-color: #3b82f6; color: #3b82f6; background: #fff;" onclick="sortAllByTime()">
+                🕒 所有班別以面見時間排序
+            </button>
             <button class="btn-back" style="border-color: #ef4444; color: #ef4444; background: #fff;" onclick="resetDayStatus()">
                 ⚠️ 安全重設面見進度 (需輸入密碼)
             </button>
